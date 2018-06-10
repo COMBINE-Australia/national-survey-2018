@@ -16,6 +16,9 @@ docs/*.html
 docs/*.docx
 docs/*.pdf
 
+# data files
+data/
+
 # output files
 output/
 
