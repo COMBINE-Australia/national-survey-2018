@@ -1,0 +1,601 @@
+---
+title: "Exploration"
+author: "COMBINE Australia"
+date: '`r Sys.Date()`'
+output:
+  html_document:
+    number_sections: yes
+    theme: yeti
+    toc: yes
+    toc_float: yes
+    df_print: paged
+---
+
+Code version: `r system("git log -1 --format=oneline | cut -d' ' -f1", intern = TRUE)`
+
+```{r knitr, include = FALSE}
+DOCNAME = "exploration"
+knitr::opts_chunk$set(autodep        = TRUE,
+                      cache          = FALSE,
+                      cache.path     = paste0("cache/", DOCNAME, "/"),
+                      cache.comments = TRUE,
+                      echo           = FALSE,
+                      error          = FALSE,
+                      fig.align      = "center",
+                      fig.path       = paste0("figures/", DOCNAME, "/"),
+                      fig.width      = 10,
+                      fig.height     = 8,
+                      message        = FALSE,
+                      warning        = FALSE)
+```
+
+```{r libaries, cache = FALSE}
+library("lubridate")
+library("here")
+library("tidyverse")
+```
+
+```{r source, cache = FALSE}
+
+```
+
+Introduction
+============
+
+In this document we are going to read in the survey responses and make some
+simple plots of each question. The goal is to see what kinds of responses we
+have and what kinds of filtering or quality control we might need to do.
+
+```{r load}
+date_fmt <- "%d/%m/%Y %H:%M:%S"
+
+col_types <- cols(
+    Timestamp                                         = col_datetime(
+                                                            format = date_fmt
+                                                        ),
+    Gender                                            = col_character(),
+    Age                                               = col_integer(),
+    `Indigenous status`                               = col_character(),
+    Location                                          = col_character(),
+    `Course level`                                    = col_character(),
+    `Course year`                                     = col_character(),
+    Residency                                         = col_character(),
+    `Time commitment`                                 = col_character(),
+    `Academic background`                             = col_character(),
+    `Competencies [Genetics]`                         = col_integer(),
+    `Competencies [Biochemistry]`                     = col_integer(),
+    `Competencies [Probability]`                      = col_integer(),
+    `Competencies [Statistical testing]`              = col_integer(),
+    `Competencies [Linear algebra]`                   = col_integer(),
+    `Competencies [Computational algorithms]`         = col_integer(),
+    `Competencies [Programming]`                      = col_integer(),
+    `Competencies [Software development]`             = col_integer(),
+    Finances                                          = col_character(),
+    `Coursework component?`                           = col_character(),
+    Classes                                           = col_double(),
+    `Coursework time`                                 = col_double(),
+    Assignments                                       = col_integer(),
+    Exams                                             = col_integer(),
+    `Computational classes`                           = col_integer(),
+    `Statistical classes`                             = col_integer(),
+    `Biological classes`                              = col_integer(),
+    Cohort                                            = col_character(),
+    Support                                           = col_character(),
+    `Coursework details`                              = col_character(),
+    `Research component?`                             = col_character(),
+    `Research percentage`                             = col_integer(),
+    `Research time`                                   = col_integer(),
+    `Research focus`                                  = col_character(),
+    Institute                                         = col_character(),
+    Computational                                     = col_integer(),
+    `Experimental technologies and platforms`         = col_character(),
+    `Programming languages`                           = col_character(),
+    Collaboration                                     = col_character(),
+    `Research group`                                  = col_character(),
+    `Other students`                                  = col_character(),
+    `Research details`                                = col_character(),
+    `Number of supervisors`                           = col_integer(),
+    `Primary supervisor precentage`                   = col_double(),
+    `Primary supervisor gender`                       = col_character(),
+    `Secondary supervisor gender`                     = col_character(),
+    `Formal meetings`                                 = col_character(),
+    `Informal meetings`                               = col_character(),
+    `Supervisor qualities [Communication]`            = col_integer(),
+    `Supervisor qualities [Inclusiveness]`            = col_integer(),
+    `Supervisor qualities [Empathy]`                  = col_integer(),
+    `Supervisor qualities [Subject matter expertise]` = col_integer(),
+    `Supervisor qualities [Availability]`             = col_integer(),
+    `Supervisor qualities [Interest in project]`      = col_integer(),
+    `External activities`                             = col_character(),
+    `Access to facilities`                            = col_character(),
+    `Access to financial support`                     = col_character(),
+    `Other support`                                   = col_character(),
+    `More about your supervisor relationship`         = col_character(),
+    `Familiarity with COMBINE`                        = col_character(),
+    `Familiarity with the ABACBS`                     = col_character(),
+    `ABACBS Membership`                               = col_character(),
+    `Future COMBINE events`                           = col_character(),
+    `What can we do for you?`                         = col_character()
+)
+
+responses <- read_csv(here("data", "responses_raw.csv"), col_types = col_types)
+glimpse(responses)
+```
+
+General
+=======
+
+Date
+----
+
+```{r date}
+responses %>%
+    mutate(Date = as_date(Timestamp)) %>%
+    ggplot(aes(x = Date)) +
+    geom_bar()
+```
+
+Gender
+------
+
+```{r gender}
+ggplot(responses, aes(x = Gender)) +
+    geom_bar()
+```
+
+Age
+---
+
+```{r age}
+ggplot(responses, aes(x = 1, y = Age)) +
+    geom_boxplot()
+```
+
+Indigenous status
+-----------------
+
+```{r indigenous-status}
+ggplot(responses, aes(x = `Indigenous status`)) +
+    geom_bar()
+```
+
+Location
+--------
+
+```{r location}
+ggplot(responses, aes(x = Location)) +
+    geom_bar()
+```
+
+Course level
+------------
+
+```{r course-level}
+ggplot(responses, aes(x = `Course level`)) +
+    geom_bar()
+```
+
+Course year
+-----------
+
+```{r course-year}
+ggplot(responses, aes(x = `Course year`)) +
+    geom_bar()
+```
+
+Residency
+---------
+
+```{r residency}
+ggplot(responses, aes(x = Residency)) +
+    geom_bar()
+```
+
+Time commitment
+---------------
+
+```{r time-commitment}
+ggplot(responses, aes(x = `Time commitment`)) +
+    geom_bar()
+```
+
+Academic background
+-------------------
+
+```{r academic-background}
+ggplot(responses, aes(x = `Academic background`)) +
+    geom_bar() +
+    coord_flip()
+```
+
+Competencies
+------------
+
+```{r competencies}
+responses %>%
+    select(starts_with("Competencies")) %>%
+    gather(key = "Competency", value = "Rating") %>%
+    mutate(Competency = str_remove(Competency, "Competencies \\["),
+           Competency = str_remove(Competency, "\\]")) %>%
+    ggplot(aes(x = Competency, y = Rating)) +
+    geom_boxplot() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+Finances
+--------
+
+```{r finances}
+ggplot(responses, aes(x = Finances)) +
+    geom_bar() +
+    coord_flip()
+```
+
+Coursework
+==========
+
+```{r coursework}
+ggplot(responses, aes(x = `Coursework component?`)) +
+    geom_bar()
+
+coursework <- responses %>% filter(`Coursework component?` == "Yes")
+```
+
+Classes
+-------
+
+```{r classes}
+ggplot(coursework, aes(x = Classes)) +
+    geom_bar()
+```
+
+Coursework time
+---------------
+
+```{r coursework-time}
+ggplot(coursework, aes(x = 1, y = `Coursework time`)) +
+    geom_boxplot()
+```
+
+Assignments
+-----------
+
+```{r assignments}
+ggplot(coursework, aes(x = Assignments)) +
+    geom_bar()
+```
+
+Class types
+-----------
+
+```{r types}
+plot_data <- coursework %>%
+    select(ends_with("classes"), -Classes) %>%
+    gather(key = "Type", value = "Number") %>%
+    mutate(Type = str_remove(Type, " classes"))
+
+ggplot(plot_data, aes(x = Type, y = Number)) +
+    geom_boxplot()
+
+ggplot(plot_data, aes(x = Number)) +
+    geom_bar() +
+    facet_wrap(~ Type)
+```
+
+Cohort
+------
+
+```{r cohort}
+ggplot(coursework, aes(x = Cohort)) +
+    geom_bar()
+```
+
+Support
+-------
+
+```{r support}
+ggplot(coursework, aes(x = Support)) +
+    geom_bar()
+```
+
+Coursework details
+------------------
+
+```{r coursework-details}
+coursework %>%
+    filter(!is.na(`Coursework details`)) %>%
+    pull(`Coursework details`)
+```
+
+Research
+========
+
+```{r research}
+ggplot(responses, aes(x = `Research component?`)) +
+    geom_bar()
+
+research <- responses %>% filter(`Research component?` == "Yes")
+```
+
+Research percentage
+-------------------
+
+```{r research-percentage}
+ggplot(research, aes(x = `Research percentage`)) +
+    geom_bar()
+```
+
+Research time
+-------------
+
+```{r research-time}
+ggplot(research, aes(x = `Research time`)) +
+    geom_bar()
+```
+
+Research focus
+--------------
+
+```{r research-focus}
+ggplot(research, aes(x = `Research focus`)) +
+    geom_bar() +
+    coord_flip()
+
+unique(research$`Research focus`)
+```
+
+Institute
+---------
+
+```{r institute}
+ggplot(research, aes(x = Institute)) +
+    geom_bar()
+```
+
+Computational
+-------------
+
+```{r computational}
+ggplot(research, aes(x = Computational)) +
+    geom_bar()
+```
+
+Technologies and platforms
+--------------------------
+
+```{r technologies-platforms}
+ggplot(research, aes(x = `Experimental technologies and platforms`)) +
+    geom_bar() +
+    coord_flip()
+
+unique(research$`Experimental technologies and platforms`)
+```
+
+Programming languages
+---------------------
+
+```{r programming-languages}
+ggplot(research, aes(x = `Programming languages`)) +
+    geom_bar() +
+    coord_flip()
+```
+
+Collaboration
+-------------
+
+```{r collaboration}
+ggplot(research, aes(x = `Collaboration`)) +
+    geom_bar() +
+    coord_flip()
+```
+
+Research group
+--------------
+
+```{r research-group}
+ggplot(research, aes(x = `Research group`)) +
+    geom_bar()
+```
+
+Other students
+--------------
+
+```{r other-students}
+ggplot(research, aes(x = `Other students`)) +
+    geom_bar()
+```
+
+Research details
+----------------
+
+```{r research-details}
+research %>%
+    filter(!is.na(`Research details`)) %>%
+    pull(`Research details`)
+```
+
+Supervisors
+===========
+
+Number of supervisors
+---------------------
+
+```{r number-supervisors}
+ggplot(research, aes(x = `Number of supervisors`)) +
+    geom_bar()
+```
+
+Primary percentage
+------------------
+
+```{r primary-percentage}
+ggplot(research, aes(x = `Primary supervisor precentage`)) +
+    geom_bar()
+```
+
+Primary gender
+--------------
+
+```{r primary-gender}
+ggplot(research, aes(x = `Primary supervisor gender`)) +
+    geom_bar() +
+    coord_flip()
+```
+
+Secondary gender
+----------------
+
+```{r secondary-gender}
+ggplot(research, aes(x = `Secondary supervisor gender`)) +
+    geom_bar() +
+    coord_flip()
+```
+
+Formal meetings
+---------------
+
+```{r formal-meetings}
+ggplot(research, aes(x = `Formal meetings`)) +
+    geom_bar()
+```
+
+Informal meetings
+-----------------
+
+```{r informal-meetings}
+ggplot(research, aes(x = `Informal meetings`)) +
+    geom_bar()
+```
+
+Supervisor qualities
+--------------------
+
+```{r supervisor-qualities}
+research %>%
+    select(starts_with("Supervisor qualities")) %>%
+    gather(key = "Quality", value = "Rating") %>%
+    mutate(Quality = str_remove(Quality, "Supervisor qualities \\["),
+           Quality = str_remove(Quality, "\\]")) %>%
+    ggplot(aes(x = Quality, y = Rating)) + 
+    geom_boxplot()
+```
+
+External activities
+-------------------
+
+```{r external-activites}
+ggplot(research, aes(x = `External activities`)) +
+    geom_bar() +
+    coord_flip()
+```
+
+Access to facilities
+--------------------
+
+```{r facilities}
+ggplot(research, aes(x = `Access to facilities`)) +
+    geom_bar() +
+    coord_flip()
+```
+
+Access to financial support
+---------------------------
+
+```{r financial-support}
+ggplot(research, aes(x = `Access to financial support`)) +
+    geom_bar() +
+    coord_flip()
+```
+
+Other support
+-------------
+
+```{r other-support}
+ggplot(research, aes(x = `Other support`)) +
+    geom_bar() +
+    coord_flip()
+
+unique(research$`Other support`)
+```
+
+Supervisor details
+------------------
+
+```{r supervisor-details}
+research %>%
+    filter(!is.na(`More about your supervisor relationship`)) %>%
+    pull(`More about your supervisor relationship`)
+```
+
+Involvement
+===========
+
+COMBINE
+-------
+
+```{r combine}
+ggplot(responses, aes(x = `Familiarity with COMBINE`)) +
+    geom_bar() +
+    coord_flip()
+
+unique(responses$`Familiarity with COMBINE`)
+```
+
+ABACBS
+------
+
+```{r abacbs}
+ggplot(responses, aes(x = `Familiarity with the ABACBS`)) +
+    geom_bar() +
+    coord_flip()
+
+unique(responses$`Familiarity with the ABACBS`)
+```
+
+ABACBS membership
+-----------------
+
+```{r abacbs-membership}
+ggplot(responses, aes(x = `ABACBS Membership`)) +
+    geom_bar() +
+    coord_flip()
+
+unique(responses$`ABACBS Membership`)
+```
+
+Future COMBINE events
+---------------------
+
+```{r future-combine}
+ggplot(responses, aes(x = `Future COMBINE events`)) +
+    geom_bar() +
+    coord_flip()
+
+unique(responses$`Future COMBINE events`)
+```
+
+What can we do for you?
+-----------------------
+
+```{r combine-do}
+responses %>%
+    filter(!is.na(`What can we do for you?`)) %>%
+    pull(`What can we do for you?`)
+```
+
+Session info
+============
+
+```{r session-info, cache = FALSE}
+devtools::session_info()
+```
+
+```{r cleanup-docs, cache = FALSE}
+doc.files <- c(list.files(pattern = "pdf"),
+               list.files(pattern = "html"),
+               list.files(pattern = "docx"))
+
+for (file in doc.files) {
+    file.rename(file, file.path("../docs", file))
+}
+```
