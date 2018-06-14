@@ -1,0 +1,898 @@
+---
+title: "Quality control"
+author: "COMBINE Australia"
+date: '`r Sys.Date()`'
+output:
+  html_document:
+    number_sections: yes
+    theme: yeti
+    toc: yes
+    toc_float: yes
+    df_print: paged
+---
+
+Code version: `r system("git log -1 --format=oneline | cut -d' ' -f1", intern = TRUE)`
+
+```{r knitr, include = FALSE}
+DOCNAME = "quality_control"
+knitr::opts_chunk$set(autodep        = TRUE,
+                      cache          = FALSE,
+                      cache.path     = paste0("cache/", DOCNAME, "/"),
+                      cache.comments = TRUE,
+                      echo           = FALSE,
+                      error          = FALSE,
+                      fig.align      = "center",
+                      fig.path       = paste0("figures/", DOCNAME, "/"),
+                      fig.width      = 10,
+                      fig.height     = 8,
+                      message        = FALSE,
+                      warning        = FALSE)
+```
+
+```{r libaries, cache = FALSE}
+library("here")
+library("tidyverse")
+```
+
+```{r source, cache = FALSE}
+
+```
+
+Introduction
+============
+
+In this document we are produce a high quality dataset for analysis and
+reporting. This will include things like removing incorrect values, making new
+columns and combining responses.
+
+
+```{r load}
+date_fmt <- "%d/%m/%Y %H:%M:%S"
+
+col_types <- cols(
+    Timestamp                                         = col_datetime(
+                                                            format = date_fmt
+                                                        ),
+    Gender                                            = col_character(),
+    Age                                               = col_integer(),
+    `Indigenous status`                               = col_character(),
+    Location                                          = col_character(),
+    `Course level`                                    = col_character(),
+    `Course year`                                     = col_character(),
+    Residency                                         = col_character(),
+    `Time commitment`                                 = col_character(),
+    `Academic background`                             = col_character(),
+    `Competencies [Genetics]`                         = col_integer(),
+    `Competencies [Biochemistry]`                     = col_integer(),
+    `Competencies [Probability]`                      = col_integer(),
+    `Competencies [Statistical testing]`              = col_integer(),
+    `Competencies [Linear algebra]`                   = col_integer(),
+    `Competencies [Computational algorithms]`         = col_integer(),
+    `Competencies [Programming]`                      = col_integer(),
+    `Competencies [Software development]`             = col_integer(),
+    Finances                                          = col_character(),
+    `Coursework component?`                           = col_character(),
+    Classes                                           = col_double(),
+    `Coursework time`                                 = col_double(),
+    Assignments                                       = col_integer(),
+    Exams                                             = col_integer(),
+    `Computational classes`                           = col_integer(),
+    `Statistical classes`                             = col_integer(),
+    `Biological classes`                              = col_integer(),
+    Cohort                                            = col_character(),
+    Support                                           = col_character(),
+    `Coursework details`                              = col_character(),
+    `Research component?`                             = col_character(),
+    `Research percentage`                             = col_integer(),
+    `Research time`                                   = col_integer(),
+    `Research focus`                                  = col_character(),
+    Institute                                         = col_character(),
+    Computational                                     = col_integer(),
+    `Experimental technologies and platforms`         = col_character(),
+    `Programming languages`                           = col_character(),
+    Collaboration                                     = col_character(),
+    `Research group`                                  = col_character(),
+    `Other students`                                  = col_character(),
+    `Research details`                                = col_character(),
+    `Number of supervisors`                           = col_integer(),
+    `Primary supervisor precentage`                   = col_double(),
+    `Primary supervisor gender`                       = col_character(),
+    `Secondary supervisor gender`                     = col_character(),
+    `Formal meetings`                                 = col_character(),
+    `Informal meetings`                               = col_character(),
+    `Supervisor qualities [Communication]`            = col_integer(),
+    `Supervisor qualities [Inclusiveness]`            = col_integer(),
+    `Supervisor qualities [Empathy]`                  = col_integer(),
+    `Supervisor qualities [Subject matter expertise]` = col_integer(),
+    `Supervisor qualities [Availability]`             = col_integer(),
+    `Supervisor qualities [Interest in project]`      = col_integer(),
+    `External activities`                             = col_character(),
+    `Access to facilities`                            = col_character(),
+    `Access to financial support`                     = col_character(),
+    `Other support`                                   = col_character(),
+    `More about your supervisor relationship`         = col_character(),
+    `Familiarity with COMBINE`                        = col_character(),
+    `Familiarity with the ABACBS`                     = col_character(),
+    `ABACBS Membership`                               = col_character(),
+    `Future COMBINE events`                           = col_character(),
+    `What can we do for you?`                         = col_character()
+)
+
+responses <- read_csv(here("data", "responses_raw.csv"), col_types = col_types)
+```
+
+Age
+===
+
+When we plotted age we saw one value over 250. This is obviously not a real
+response. Let's have a look at all the values for this response and try and work
+out if the whole thing is incorrect or somebody has just made a typo in one
+field.
+
+```{r age}
+responses %>%
+    filter(Age > 250) %>%
+    glimpse()
+```
+
+There are a few things that make it seem like this is not a real response,
+particularly that they have responed "No" to both having a coursework component
+and having a research component. Given this let's remove this response.
+
+```{r age-filter}
+responses <- responses %>%
+    filter(Age < 250)
+```
+
+The distribution of ages now looks like this:
+
+```{r age-plot}
+ggplot(responses, aes(x = 1, y = Age)) +
+    geom_boxplot()
+```
+
+Just to be sure let's check if there are any other responses that answered "No"
+to both the research and coursework questions.
+
+```{r check-no}
+responses %>%
+    filter(responses$`Coursework component?` == "No",
+           responses$`Research component?` == "No") %>%
+    glimpse()
+```
+
+It looks like there is one more of these responses. Because most of the
+questions are in these sections, and all students should be doing at least one
+of coursework and research, this response is probably not informative so we can
+remove it as well.
+
+```{r check-no-filter}
+responses <- responses %>%
+    filter(responses$`Coursework component?` != "No" |
+           responses$`Research component?` != "No")
+```
+
+Academic background
+===================
+
+Respondents were asked what their academic background was and given the options
+"Biology", "Computer science/software engineering", "Statistics/Mathematics" or
+"Other". Let's look at what they said.
+
+```{r background responses}
+table(responses$`Academic background`)
+```
+
+Most of these other responses appear only once so let's group them into the
+following groups:
+
+* Biology - Biology, Biology but did a MSc(bioinformatics), Microbiology
+* Computer science/software engineering - Computer science/software engineering,
+  originally doing BE (software)/BSc (maths) but now BE (software)/BSc
+  (genetics) with a bioinformatics focus
+* Statistics/Mathematics - Statistics/Mathematics
+* Other - Bioinformtics, Biomedical Computing (bio &comp), Biotech, Clinical,
+  Honours in Biomedical Computing, Pharmacy, Psychology, Bioengineering (Minors
+  in mathematics and cell bio), Chemical Engineering, chemistry engineering,
+  Mechanical Engineering
+
+```{r group-background}
+responses <- responses %>%
+    mutate(BackgroundGrouped = `Academic background`) %>%
+    mutate(BackgroundGrouped = recode(BackgroundGrouped,
+        `Biology but did a MSc(bioinformatics)` = "Biology",
+        Microbiology = "Biology",
+        `originally doing BE (software)/BSc (maths) but now BE (software)/BSc (genetics) with a bioinformatics focus` = "Computer science/software engineering",
+        `Bioengineering (Minors in mathematics and cell bio)` = "Other",
+        `Chemical Engineering` = "Other",
+        `chemistry engineering` = "Other",
+        `Mechanical Engineering` = "Other",
+        `Bioinformtics` = "Other",
+        `Biomedical Computing (bio &comp)` = "Other",
+        Biotech = "Other",
+        Clinical = "Other",
+        `Honours in Biomedical Computing` = "Other",
+        Pharmacy = "Other",
+        Psychology = "Other"
+    ))
+```
+
+Let's see what these groups look like.
+
+```{r plot-background-grouped}
+ggplot(responses, aes(x = BackgroundGrouped)) +
+    geom_bar()
+```
+
+Finances
+========
+
+When a question allows respondents to select multiple check boxes Google Sheets
+combines the answer into a single string. This is not very useful for analysis,
+what we really want is a TRUE/FALSE for each option.
+
+```{r add_options_cols}
+add_options_cols <- function(responses, col, opts) {
+    options_list <- map(responses[[col]], function(response) {
+        choices <- unlist(str_split(response, ", "))
+        selected <- opts %in% choices
+        others <- choices[!(choices %in% opts)]
+        is_other <- length(others) > 0
+        other <- paste(others, collapse = ", ")
+        c(selected, is_other, other)
+    })
+
+    options_df <- options_list %>%
+        do.call(rbind, .) %>%
+        as_data_frame() %>%
+        setNames(c(opts, "IsOther", "Other")) %>%
+        mutate_at(1:(length(opts) + 1), as.logical) %>%
+        mutate(Other = if_else(Other == "", NA_character_, Other)) %>%
+        rename_all(function(x) {paste0(col, " [", x, "]")})
+    
+    responses <- bind_cols(responses, options_df)
+    
+    return(responses)
+}
+```
+
+```{r tidy-finances}
+opts <- c("Government scholarship (e.g. RTP)",
+          "University scholarship (RTP equivalent)",
+          "Top-up scholarship",
+          "Part-time work",
+          "Full-time work",
+          "Parental support",
+          "Savings")
+
+responses <- add_options_cols(responses, "Finances", opts)
+```
+
+```{r plot-finances}
+responses %>%
+    select(starts_with("Finances [")) %>%
+    select(-`Finances [Other]`) %>%
+    gather(key = Type, value = Received) %>%
+    filter(Received == TRUE) %>%
+    mutate(Type = str_remove(Type, "Finances \\["),
+           Type = str_remove(Type, "\\]")) %>%
+    ggplot(aes(x = Type)) +
+    geom_bar() +
+    coord_flip()
+```
+
+This also makes it easier to look at the "Other" responses.
+
+```{r finances-other}
+responses %>%
+    filter(`Finances [IsOther]`) %>%
+    pull(`Finances [Other]`)
+```
+
+There are two identical responses here. It seems likely that this is a duplicate
+entry but let's just check across all the fields.
+
+```{r finances-duplicate}
+responses %>%
+    filter(`Finances [Other]` == "nothing, I am piss poor") %>%
+    glimpse()
+```
+
+All of the responses seem the same so we will remove the second of these
+entries.
+
+```{r finances-filter}
+to_drop <- which(responses$`Finances [Other]` == "nothing, I am piss poor")[2]
+responses <- responses[-to_drop, ]
+```
+
+Classes
+=======
+
+```{r coursework}
+coursework <- responses %>%
+    filter(`Coursework component?` == "Yes")
+```
+
+When we look at the exploratory classes plot there are some values between 0 and
+1. People were asked how many classes they are enrolled in this semester so it
+should be a whole number. Let's see what they put, there might also be some
+clues in their response to coursework details question.
+
+```{r classes}
+coursework %>%
+    filter(Classes < 1) %>%
+    glimpse()
+
+coursework %>%
+    filter(Classes < 1) %>%
+    pull(`Coursework details`)
+```
+
+It looks like this person has some compulsory coursework but isn't currently
+enrolled in any classes. Most of the rest of the coursework questions ask about
+study load this semester. Their responses to these probably aren't relevant so
+let's make a new column that tells us if people are currently doing coursework.
+
+```{r classes-set}
+responses <- responses %>%
+    mutate(CourseworkCurrent = if_else(`Coursework component?` == "Yes" &
+                                           Classes < 1,
+                                       "No", `Coursework component?`))
+
+coursework <- responses %>%
+    filter(CourseworkCurrent == "Yes")
+```
+
+The questions about different types of classes ask for a percentage but there
+are a few very low values. This suggests that some people didn't quite
+understand what the question was asking for. For the moment we will leave these
+as they are.
+
+Research
+========
+
+```{r research}
+research <- responses %>%
+    filter(`Research component?` == "Yes")
+```
+
+Some people who said they had a research component to their course said that
+zero percent of their time was spent doing research. Let's have a look at those
+more closely.
+
+```{r research-zero}
+research %>%
+    filter(`Research percentage` == 0) %>%
+    glimpse()
+```
+
+It look like this person is doing a PhD and spends 100 percent of their time
+doing research but set the percentage of their course as research to zero. This
+seems like a mistake so let's set it 100.
+
+```{r research-percent-set}
+responses <- responses %>%
+    mutate(`Research percentage` = if_else(`Research percentage` == 0,
+                                           100L, `Research percentage`))
+```
+
+Other people did something similar with the research time question. Let's have a
+look at them.
+
+```{r research-time}
+research %>%
+    filter(`Research time` == 0) %>%
+    glimpse()
+
+research %>%
+    filter(`Research time` == 0) %>%
+    pull(`Research details`)
+```
+
+Two of these people say they haven't started their research yet. It seems likely
+that is true of the third as well so let's make a new column to tell us if
+people are currently doing research.
+
+```{r research-time-set}
+responses <- responses %>%
+    mutate(ResearchCurrent = if_else(`Research component?` == "Yes" &
+                                         `Research time` == 0, "No",
+                                     `Research component?`))
+
+research <- responses %>%
+    filter(ResearchCurrent == "Yes")
+```
+
+Research focus
+==============
+
+Similar to the Finances question the research focus question let people tick
+multiple checkboxes. Let's convert the options to columns like we did before.
+
+```{r tidy-focus}
+opts <- c("Genomic variants",
+          "Gene expression",
+          "Metagenomics",
+          "Proteomics",
+          "Data visualisation",
+          "Methods development",
+          "Cancer",
+          "Data analysis",
+          "Cell biology",
+          "Plant biology",
+          "Rare disease",
+          "Metabolomics",
+          "Microbial biology",
+          "Human biology",
+          "Model organisms",
+          "Non-model organisms")
+
+responses <- add_options_cols(responses, "Research focus", opts)
+```
+
+```{r plot-focus}
+responses %>%
+    select(starts_with("Research focus [")) %>%
+    select(-`Research focus [Other]`) %>%
+    gather(key = Type, value = Studied) %>%
+    filter(Studied == TRUE) %>%
+    mutate(Type = str_remove(Type, "Research focus \\["),
+           Type = str_remove(Type, "\\]")) %>%
+    ggplot(aes(x = Type)) +
+    geom_bar() +
+    coord_flip()
+```
+
+This also makes it easier to look at the "Other" responses.
+
+```{r focus-other}
+responses %>%
+    filter(ResearchCurrent == "Yes") %>%
+    filter(`Research focus [IsOther]`) %>%
+    pull(`Research focus [Other]`)
+```
+
+There is one person here who has answered "Unsure yet" to many of the research
+questions. It looks like they are another person that hasn't started their
+research project yet. Let's set `ResearchCurrent` to "No" for them as well.
+
+```{r research-focus-set}
+responses <- responses %>%
+    mutate(ResearchCurrent = if_else(
+        is.na(`Research focus [Other]`),
+        ResearchCurrent, if_else(
+            `Research focus [Other]` == "Unsure yet",
+            "No", ResearchCurrent)))
+
+research <- responses %>%
+    filter(ResearchCurrent == "Yes")
+```
+
+Technologies and platforms
+==========================
+
+This is another multi-choice question. Let's turn it into columns.
+
+```{r tidy-techs}
+opts <- c("RNA-seq",
+          "Whole genome sequencing",
+          "Exome sequencing",
+          "Short read sequencing (e.g. Illumina)",
+          "Long read sequencing (e.g. MinIon PacBio)",
+          "Mass spectrometry",
+          "Array-based technologies (eg. expression microarrays)",
+          "Flow cyometry")
+
+responses <- responses %>%
+    mutate(Technologies = str_replace(`Experimental technologies and platforms`,
+                                     "MinIon, PacBio", "MinIon PacBio")) %>%
+    add_options_cols("Technologies", opts)
+```
+
+```{r plot-techs}
+responses %>%
+    select(starts_with("Technologies [")) %>%
+    select(-`Technologies [Other]`) %>%
+    gather(key = Type, value = Used) %>%
+    filter(Used == TRUE) %>%
+    mutate(Type = str_remove(Type, "Technologies \\["),
+           Type = str_remove(Type, "\\]")) %>%
+    ggplot(aes(x = Type)) +
+    geom_bar() +
+    coord_flip()
+```
+
+```{r techs-other}
+responses %>%
+    filter(ResearchCurrent == "Yes") %>%
+    filter(`Technologies [IsOther]`) %>%
+    pull(`Technologies [Other]`)
+```
+
+Programming
+===========
+
+The programming question is another multi-choice question.
+
+```{r tidy-programming}
+opts <- c("R",
+          "Python",
+          "Shell",
+          "Git",
+          "Perl",
+          "C/C++",
+          "MATLAB")
+
+responses <- responses %>%
+    add_options_cols("Programming languages", opts)
+```
+
+```{r plot-programming}
+responses %>%
+    select(starts_with("Programming languages [")) %>%
+    select(-`Programming languages [Other]`) %>%
+    gather(key = Type, value = Used) %>%
+    filter(Used == TRUE) %>%
+    mutate(Type = str_remove(Type, "Programming languages \\["),
+           Type = str_remove(Type, "\\]")) %>%
+    ggplot(aes(x = Type)) +
+    geom_bar() +
+    coord_flip()
+```
+
+```{r programming-other}
+responses %>%
+    filter(ResearchCurrent == "Yes") %>%
+    filter(`Programming languages [IsOther]`) %>%
+    pull(`Programming languages [Other]`)
+```
+
+Collaboration
+=============
+
+Another multi-choice question
+
+```{r tidy-collaboration}
+opts <- c("Your research group",
+          "Other research groups (at your institute/university)",
+          "External research groups",
+          "Other students")
+
+responses <- responses %>%
+    add_options_cols("Collaboration", opts)
+```
+
+```{r plot-collaboration}
+responses %>%
+    select(starts_with("Collaboration [")) %>%
+    select(-`Collaboration [Other]`) %>%
+    gather(key = Type, value = Used) %>%
+    filter(Used == TRUE) %>%
+    mutate(Type = str_remove(Type, "Collaboration \\["),
+           Type = str_remove(Type, "\\]")) %>%
+    ggplot(aes(x = Type)) +
+    geom_bar() +
+    coord_flip()
+```
+
+```{r collaboration-other}
+responses %>%
+    filter(ResearchCurrent == "Yes") %>%
+    filter(`Collaboration [IsOther]`) %>%
+    pull(`Collaboration [Other]`)
+```
+
+Supervisor percentage
+=====================
+
+There is a type in the "Primary supervisor precentage question", let's fix that.
+
+```{r rename-supervisor-percent}
+responses <- responses %>%
+    rename(`Primary supervisor percentage` = `Primary supervisor precentage`)
+```
+
+Facilities
+==========
+
+Another mult-choice question.
+
+```{r tidy-facilities}
+opts <- c("Desk",
+          "Computer",
+          "Server/HPC",
+          "Laboratory",
+          "Meeting rooms",
+          "Break rooms")
+
+responses <- responses %>%
+    add_options_cols("Access to facilities", opts)
+```
+
+```{r plot-facilities}
+responses %>%
+    select(starts_with("Access to facilities [")) %>%
+    select(-`Access to facilities [Other]`) %>%
+    gather(key = Type, value = Used) %>%
+    filter(Used == TRUE) %>%
+    mutate(Type = str_remove(Type, "Access to facilities \\["),
+           Type = str_remove(Type, "\\]")) %>%
+    ggplot(aes(x = Type)) +
+    geom_bar() +
+    coord_flip()
+```
+
+```{r facilities-other}
+responses %>%
+    filter(ResearchCurrent == "Yes") %>%
+    filter(`Access to facilities [IsOther]`) %>%
+    pull(`Access to facilities [Other]`)
+```
+
+Financial support
+=================
+
+Another mult-choice question.
+
+```{r tidy-financial-support}
+opts <- c("Travel/conference funding (with application)",
+          "Travel/conference funding (without application)",
+          "Top-up scholarships")
+
+responses <- responses %>%
+    add_options_cols("Access to financial support", opts)
+```
+
+```{r plot-financial-support}
+responses %>%
+    select(starts_with("Access to financial support [")) %>%
+    select(-`Access to financial support [Other]`) %>%
+    gather(key = Type, value = Used) %>%
+    filter(Used == TRUE) %>%
+    mutate(Type = str_remove(Type, "Access to financial support \\["),
+           Type = str_remove(Type, "\\]")) %>%
+    ggplot(aes(x = Type)) +
+    geom_bar() +
+    coord_flip()
+```
+
+```{r financial-support-other}
+responses %>%
+    filter(ResearchCurrent == "Yes") %>%
+    filter(`Access to financial support [IsOther]`) %>%
+    pull(`Access to financial support [Other]`)
+```
+
+Other support
+=============
+
+Another mult-choice question.
+
+```{r tidy-other-support}
+opts <- c("Other people in my research group",
+          "Other people in my institute/university",
+          "Other students",
+          "Other people in my life (friends/family etc.)",
+          "No I don't feel like I have support from other people")
+
+responses <- responses %>%
+    mutate(`Other support` = str_replace(`Other support`,
+                                         "No, I", "No I")) %>%
+    add_options_cols("Other support", opts)
+```
+
+```{r plot-other-support}
+responses %>%
+    select(starts_with("Other support [")) %>%
+    select(-`Other support [Other]`) %>%
+    gather(key = Type, value = Used) %>%
+    filter(Used == TRUE) %>%
+    mutate(Type = str_remove(Type, "Other support \\["),
+           Type = str_remove(Type, "\\]")) %>%
+    ggplot(aes(x = Type)) +
+    geom_bar() +
+    coord_flip()
+```
+
+```{r other-support-other}
+responses %>%
+    filter(ResearchCurrent == "Yes") %>%
+    filter(`Other support [IsOther]`) %>%
+    pull(`Other support [Other]`)
+```
+
+COMBINE Familiarity
+===================
+
+Another multi-choice question.
+
+```{r tidy-combine-familiarity}
+opts <- c("This survey",
+          "Follow COMBINE on social media",
+          "Subscribe to COMBINE mailing list",
+          "Attended COMBINE workshop",
+          "Attended COMBINE seminar",
+          "Attended COMBINE Symposium")
+
+responses <- responses %>%
+    add_options_cols("Familiarity with COMBINE", opts)
+```
+
+```{r plot-combine-familiarity}
+responses %>%
+    select(starts_with("Familiarity with COMBINE [")) %>%
+    select(-`Familiarity with COMBINE [Other]`) %>%
+    gather(key = Type, value = Used) %>%
+    filter(Used == TRUE) %>%
+    mutate(Type = str_remove(Type, "Familiarity with COMBINE \\["),
+           Type = str_remove(Type, "\\]")) %>%
+    ggplot(aes(x = Type)) +
+    geom_bar() +
+    coord_flip()
+```
+
+```{r combine-familiarity-other}
+responses %>%
+    filter(ResearchCurrent == "Yes") %>%
+    filter(`Familiarity with COMBINE [IsOther]`) %>%
+    pull(`Familiarity with COMBINE [Other]`)
+```
+
+ABACBS Familiarity
+===================
+
+Another multi-choice question. First let's fix the typo in it.
+
+```{r abacbs-familiarity-typo}
+responses <- responses %>%
+    rename(`Familiarity with ABACBS` = `Familiarity with the ABACBS`)
+```
+
+
+```{r tidy-abacbs-familiarity}
+opts <- c("ABACBS student member",
+          "Follow ABACBS on social media",
+          "Subscribe to the ABACBS newsletter",
+          "Attended ABACBS conference",
+          "Attended another ABACBS event",
+          "I haven't had any involvement with ABACBS")
+
+responses <- responses %>%
+    add_options_cols("Familiarity with ABACBS", opts)
+```
+
+```{r plot-abacbs-familiarity}
+responses %>%
+    select(starts_with("Familiarity with ABACBS [")) %>%
+    select(-`Familiarity with ABACBS [Other]`) %>%
+    gather(key = Type, value = Used) %>%
+    filter(Used == TRUE) %>%
+    mutate(Type = str_remove(Type, "Familiarity with ABACBS \\["),
+           Type = str_remove(Type, "\\]")) %>%
+    ggplot(aes(x = Type)) +
+    geom_bar() +
+    coord_flip()
+```
+
+```{r abacbs-familiarity-other}
+responses %>%
+    filter(ResearchCurrent == "Yes") %>%
+    filter(`Familiarity with ABACBS [IsOther]`) %>%
+    pull(`Familiarity with ABACBS [Other]`)
+```
+
+ABACBS membership
+===================
+
+Another multi-choice question.
+
+```{r tidy-abacbs-membership}
+opts <- c("Member of a national society",
+          "Discounts for ABACBS/COMBINE events",
+          "Discounts for ABACBS conference/COMBINE Symposium",
+          "Access to ABACBS travel bursaries",
+          "Access to ABACBS prizes and awards",
+          "Looks good on a CV",
+          "A say in the direction of the society",
+          "I don't think there are any benefits of membership for students")
+
+responses <- responses %>%
+    add_options_cols("ABACBS Membership", opts)
+```
+
+```{r plot-abacbs-membership}
+responses %>%
+    select(starts_with("ABACBS Membership [")) %>%
+    select(-`ABACBS Membership [Other]`) %>%
+    gather(key = Type, value = Used) %>%
+    filter(Used == TRUE) %>%
+    mutate(Type = str_remove(Type, "ABACBS Membership \\["),
+           Type = str_remove(Type, "\\]")) %>%
+    ggplot(aes(x = Type)) +
+    geom_bar() +
+    coord_flip()
+```
+
+```{r abacbs-membership-other}
+responses %>%
+    filter(ResearchCurrent == "Yes") %>%
+    filter(`ABACBS Membership [IsOther]`) %>%
+    pull(`ABACBS Membership [Other]`)
+```
+
+COMBINE events
+==============
+
+Another multi-choice question.
+
+```{r tidy-combine-events}
+opts <- c("General programming workshops (e.g. R Python Git)",
+          "Bioinformatics focused workshops (e.g. RNA-seq analysis)",
+          "Professional skills workshops (e.g. presenting writing)",
+          "Statistics workshops",
+          "Lab skills workshops",
+          "Once off seminars",
+          "Regular seminar series (invited speakers)",
+          "Regular seminar series (student speakers)",
+          "Local social night",
+          "COMBINE Symposium (annual student conference run in conjunction with the ABACBS conference)",
+          "I'm not interested in events")
+
+responses <- responses %>%
+    mutate(`Future COMBINE events` = str_replace(`Future COMBINE events`,
+                                                 "R, Python, Git",
+                                                 "R Python Git"),
+           `Future COMBINE events` = str_replace(`Future COMBINE events`,
+                                                 "presenting, writing",
+                                                 "presenting writing")) %>%
+    add_options_cols("Future COMBINE events", opts)
+```
+
+```{r plot-combine-events}
+responses %>%
+    select(starts_with("Future COMBINE events [")) %>%
+    select(-`Future COMBINE events [Other]`) %>%
+    gather(key = Type, value = Used) %>%
+    filter(Used == TRUE) %>%
+    mutate(Type = str_remove(Type, "Future COMBINE events \\["),
+           Type = str_remove(Type, "\\]")) %>%
+    ggplot(aes(x = Type)) +
+    geom_bar() +
+    coord_flip()
+```
+
+```{r combine-events-other}
+responses %>%
+    filter(ResearchCurrent == "Yes") %>%
+    filter(`Future COMBINE events [IsOther]`) %>%
+    pull(`Future COMBINE events [Other]`)
+```
+
+This other response looks like it better fits one of the other options, so I am
+going to set that to TRUE instead.
+
+```{r combine-events-set}
+idx <- which(responses$`Future COMBINE events [Other]` == 
+                 "Beginners guide to WGS, particularly microbial genome analysis")
+responses$`Future COMBINE events [Bioinformatics focused workshops (e.g. RNA-seq analysis)]`[idx] <- TRUE
+responses$`Future COMBINE events [IsOther]`[idx] <- FALSE
+responses$`Future COMBINE events [Other]`[idx] <- NA
+```
+
+Session info
+============
+
+```{r session-info, cache = FALSE}
+devtools::session_info()
+```
+
+```{r cleanup-docs, cache = FALSE}
+doc.files <- c(list.files(pattern = "pdf"),
+               list.files(pattern = "html"),
+               list.files(pattern = "docx"))
+
+for (file in doc.files) {
+    file.rename(file, file.path("../docs", file))
+}
+```
