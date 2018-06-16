@@ -1018,7 +1018,7 @@ colnames(responses)
 ```
 
 ```{r save}
-write_tsv(responses, here("data/responses_clean.csv"))
+write_tsv(responses, here("data/responses_clean.tsv"))
 ```
 
 Session info
