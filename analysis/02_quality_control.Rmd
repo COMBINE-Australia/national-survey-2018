@@ -232,7 +232,7 @@ combines the answer into a single string. This is not very useful for analysis,
 what we really want is a TRUE/FALSE for each option.
 
 ```{r add_options_cols}
-add_options_cols <- function(responses, col, opts) {
+add_options_cols <- function(responses, col, opts, has_other = TRUE) {
     options_list <- map(responses[[col]], function(response) {
         choices <- unlist(str_split(response, ", "))
         selected <- opts %in% choices
@@ -247,7 +247,14 @@ add_options_cols <- function(responses, col, opts) {
         as_data_frame() %>%
         setNames(c(opts, "IsOther", "Other")) %>%
         mutate_at(1:(length(opts) + 1), as.logical) %>%
-        mutate(Other = if_else(Other == "", NA_character_, Other)) %>%
+        mutate(Other = if_else(Other == "", NA_character_, Other)) 
+    
+    if (!has_other) {
+        options_df <- options_df %>%
+            select(-IsOther, -Other)
+    }
+    
+    options_df <- options_df %>%
         rename_all(function(x) {paste0(col, " [", x, "]")})
     
     responses <- bind_cols(responses, options_df)
@@ -560,13 +567,12 @@ opts <- c("Your research group",
           "Other students")
 
 responses <- responses %>%
-    add_options_cols("Collaboration", opts)
+    add_options_cols("Collaboration", opts, has_other = FALSE)
 ```
 
 ```{r plot-collaboration}
 responses %>%
     select(starts_with("Collaboration [")) %>%
-    select(-`Collaboration [Other]`) %>%
     gather(key = Type, value = Used) %>%
     filter(Used == TRUE) %>%
     mutate(Type = str_remove(Type, "Collaboration \\["),
@@ -574,13 +580,6 @@ responses %>%
     ggplot(aes(x = Type)) +
     geom_bar() +
     coord_flip()
-```
-
-```{r collaboration-other}
-responses %>%
-    filter(ResearchCurrent == "Yes") %>%
-    filter(`Collaboration [IsOther]`) %>%
-    pull(`Collaboration [Other]`)
 ```
 
 Supervisor percentage
@@ -607,13 +606,12 @@ opts <- c("Desk",
           "Break rooms")
 
 responses <- responses %>%
-    add_options_cols("Access to facilities", opts)
+    add_options_cols("Access to facilities", opts, has_other = FALSE)
 ```
 
 ```{r plot-facilities}
 responses %>%
     select(starts_with("Access to facilities [")) %>%
-    select(-`Access to facilities [Other]`) %>%
     gather(key = Type, value = Used) %>%
     filter(Used == TRUE) %>%
     mutate(Type = str_remove(Type, "Access to facilities \\["),
@@ -621,13 +619,6 @@ responses %>%
     ggplot(aes(x = Type)) +
     geom_bar() +
     coord_flip()
-```
-
-```{r facilities-other}
-responses %>%
-    filter(ResearchCurrent == "Yes") %>%
-    filter(`Access to facilities [IsOther]`) %>%
-    pull(`Access to facilities [Other]`)
 ```
 
 Financial support
@@ -679,13 +670,12 @@ opts <- c("Other people in my research group",
 responses <- responses %>%
     mutate(`Other support` = str_replace(`Other support`,
                                          "No, I", "No I")) %>%
-    add_options_cols("Other support", opts)
+    add_options_cols("Other support", opts, has_other = FALSE)
 ```
 
 ```{r plot-other-support}
 responses %>%
     select(starts_with("Other support [")) %>%
-    select(-`Other support [Other]`) %>%
     gather(key = Type, value = Used) %>%
     filter(Used == TRUE) %>%
     mutate(Type = str_remove(Type, "Other support \\["),
@@ -693,13 +683,6 @@ responses %>%
     ggplot(aes(x = Type)) +
     geom_bar() +
     coord_flip()
-```
-
-```{r other-support-other}
-responses %>%
-    filter(ResearchCurrent == "Yes") %>%
-    filter(`Other support [IsOther]`) %>%
-    pull(`Other support [Other]`)
 ```
 
 COMBINE Familiarity
@@ -716,13 +699,12 @@ opts <- c("This survey",
           "Attended COMBINE Symposium")
 
 responses <- responses %>%
-    add_options_cols("Familiarity with COMBINE", opts)
+    add_options_cols("Familiarity with COMBINE", opts, has_other = FALSE)
 ```
 
 ```{r plot-combine-familiarity}
 responses %>%
     select(starts_with("Familiarity with COMBINE [")) %>%
-    select(-`Familiarity with COMBINE [Other]`) %>%
     gather(key = Type, value = Used) %>%
     filter(Used == TRUE) %>%
     mutate(Type = str_remove(Type, "Familiarity with COMBINE \\["),
@@ -730,13 +712,6 @@ responses %>%
     ggplot(aes(x = Type)) +
     geom_bar() +
     coord_flip()
-```
-
-```{r combine-familiarity-other}
-responses %>%
-    filter(ResearchCurrent == "Yes") %>%
-    filter(`Familiarity with COMBINE [IsOther]`) %>%
-    pull(`Familiarity with COMBINE [Other]`)
 ```
 
 ABACBS Familiarity
@@ -759,13 +734,12 @@ opts <- c("ABACBS student member",
           "I haven't had any involvement with ABACBS")
 
 responses <- responses %>%
-    add_options_cols("Familiarity with ABACBS", opts)
+    add_options_cols("Familiarity with ABACBS", opts, has_other = FALSE)
 ```
 
 ```{r plot-abacbs-familiarity}
 responses %>%
     select(starts_with("Familiarity with ABACBS [")) %>%
-    select(-`Familiarity with ABACBS [Other]`) %>%
     gather(key = Type, value = Used) %>%
     filter(Used == TRUE) %>%
     mutate(Type = str_remove(Type, "Familiarity with ABACBS \\["),
@@ -773,13 +747,6 @@ responses %>%
     ggplot(aes(x = Type)) +
     geom_bar() +
     coord_flip()
-```
-
-```{r abacbs-familiarity-other}
-responses %>%
-    filter(ResearchCurrent == "Yes") %>%
-    filter(`Familiarity with ABACBS [IsOther]`) %>%
-    pull(`Familiarity with ABACBS [Other]`)
 ```
 
 ABACBS membership
@@ -798,13 +765,12 @@ opts <- c("Member of a national society",
           "I don't think there are any benefits of membership for students")
 
 responses <- responses %>%
-    add_options_cols("ABACBS Membership", opts)
+    add_options_cols("ABACBS Membership", opts, has_other = FALSE)
 ```
 
 ```{r plot-abacbs-membership}
 responses %>%
     select(starts_with("ABACBS Membership [")) %>%
-    select(-`ABACBS Membership [Other]`) %>%
     gather(key = Type, value = Used) %>%
     filter(Used == TRUE) %>%
     mutate(Type = str_remove(Type, "ABACBS Membership \\["),
@@ -812,13 +778,6 @@ responses %>%
     ggplot(aes(x = Type)) +
     geom_bar() +
     coord_flip()
-```
-
-```{r abacbs-membership-other}
-responses %>%
-    filter(ResearchCurrent == "Yes") %>%
-    filter(`ABACBS Membership [IsOther]`) %>%
-    pull(`ABACBS Membership [Other]`)
 ```
 
 COMBINE events
@@ -878,6 +837,188 @@ idx <- which(responses$`Future COMBINE events [Other]` ==
 responses$`Future COMBINE events [Bioinformatics focused workshops (e.g. RNA-seq analysis)]`[idx] <- TRUE
 responses$`Future COMBINE events [IsOther]`[idx] <- FALSE
 responses$`Future COMBINE events [Other]`[idx] <- NA
+```
+
+Rename columns
+==============
+
+The last thing we are going to do is rename some of the columns to make things a
+bit simpler during analysis. We are also going to rearrange some of the columns.
+
+```{r rename-cols}
+responses <- responses %>%
+    select(Timestamp,
+           Gender,
+           Age,
+           IndigenousStatus = `Indigenous status`,
+           Location,
+           CourseLevel = `Course level`,
+           CourseYear = `Course year`,
+           Residency,
+           TimeCommitment = `Time commitment`,
+           Background = `Academic background`,
+           BackgroundGrouped,
+           Competencies_Genetics = `Competencies [Genetics]`,
+           Competencies_Biochemistry =`Competencies [Biochemistry]`,
+           Competencies_Probability = `Competencies [Probability]`,
+           Competencies_Testing =`Competencies [Statistical testing]`,
+           Competencies_LinearAlgebra =`Competencies [Linear algebra]`,
+           Competencies_Algorithms =`Competencies [Computational algorithms]`,
+           Competencies_Programming =`Competencies [Programming]`,
+           Competencies_SoftwareDev =`Competencies [Software development]`,
+           Finances,
+           Finances_Government = `Finances [Government scholarship (e.g. RTP)]`,
+           Finances_University = `Finances [University scholarship (RTP equivalent)]`,
+           Finances_TopUp = `Finances [Top-up scholarship]`,
+           Finances_PartTime = `Finances [Part-time work]`,
+           Finances_FullTime = `Finances [Full-time work]`,
+           Finances_Parental = `Finances [Parental support]`,
+           Finances_Savings = `Finances [Savings]`,
+           Finances_HasOther = `Finances [IsOther]`,
+           Finances_Other = `Finances [Other]`,
+           CourseworkComponent = `Coursework component?`,
+           CourseworkCurrent,
+           Classes,
+           Classes_Computational = `Computational classes`,
+           Classes_Statistical = `Statistical classes`,
+           Clases_Biological = `Biological classes`,
+           CourseworkTime = `Coursework time`,
+           Assignments,
+           Exams,
+           Cohort,
+           Support,
+           CourseworkDetails = `Coursework details`,
+           ResearchComponent = `Research component?`,
+           ResearchCurrent,
+           ResearchPercentage = `Research percentage`,
+           ResearchTime = `Research time`,
+           ResearchFocus = `Research focus`,
+           Focus_GenomicVariants = `Research focus [Genomic variants]`,
+           Focus_GeneExpression = `Research focus [Gene expression]`,
+           Focus_Metagenomics = `Research focus [Metagenomics]`,
+           Focus_Proteomics = `Research focus [Proteomics]`,
+           Focus_DataVis = `Research focus [Data visualisation]`,
+           Focus_Methods = `Research focus [Methods development]`,
+           Focus_Cancer = `Research focus [Cancer]`,
+           Focus_Analysis = `Research focus [Data analysis]`,
+           Focus_CellBiology = `Research focus [Cell biology]`,
+           Focus_PlantBiology = `Research focus [Plant biology]`,
+           Focus_RareDisease = `Research focus [Rare disease]`,
+           Focus_Metabolomics = `Research focus [Metabolomics]`,
+           Focus_MicrobialBiology = `Research focus [Microbial biology]`,
+           Focus_HumanBiology = `Research focus [Human biology]`,
+           Focus_ModelOrganisims = `Research focus [Model organisms]`,
+           Focus_NonModelOrganisims = `Research focus [Non-model organisms]`,
+           Focus_HasOther = `Research focus [IsOther]`,
+           Focus_Other = `Research focus [Other]`,
+           Institute,
+           Computational,
+           Technologies,
+           Technologies_RNASeq = `Technologies [RNA-seq]`,
+           Technologies_WholeGenome = `Technologies [Whole genome sequencing]`,
+           Technologies_Exome = `Technologies [Exome sequencing]`,
+           Technologies_ShortRead = `Technologies [Short read sequencing (e.g. Illumina)]`,
+           Technologies_LongRead = `Technologies [Long read sequencing (e.g. MinIon PacBio)]`,
+           Technologies_MassSpec = `Technologies [Mass spectrometry]`,
+           Technologies_Array = `Technologies [Array-based technologies (eg. expression microarrays)]`,
+           Technologies_FlowCytometry = `Technologies [Flow cyometry]`,
+           Technologies_HasOther = `Technologies [IsOther]`,
+           Technologes_Other = `Technologies [Other]`,
+           ProgrammingLanguages = `Programming languages`,
+           Programming_R = `Programming languages [R]`,
+           Programming_Python = `Programming languages [Python]`,
+           Programming_Shell = `Programming languages [Shell]`,
+           Programming_Git = `Programming languages [Git]`,
+           Programming_Perl = `Programming languages [Perl]`,
+           Programming_CCpp = `Programming languages [C/C++]`,
+           Programming_MATLAB = `Programming languages [MATLAB]`,
+           Programming_HasOther = `Programming languages [IsOther]`,
+           Programming_Other = `Programming languages [Other]`,
+           Collaboration,
+           Collaboration_YourGroup = `Collaboration [Your research group]`,
+           Collaboration_OtherGroups = `Collaboration [Other research groups (at your institute/university)]`,
+           Collaboration_ExternalGroups = `Collaboration [External research groups]`,
+           Collaboration_OtherStudents = `Collaboration [Other students]`,
+           ResearchGroup = `Research group`,
+           OtherStudents = `Other students`,
+           ResearchDetails = `Research details`,
+           SupervisorNumber = `Number of supervisors`,
+           PrimaryPercentage = `Primary supervisor percentage`,
+           PrimaryGender = `Primary supervisor gender`,
+           SecondayGender = `Secondary supervisor gender`,
+           FormalMeetings = `Formal meetings`,
+           InformalMeetings = `Informal meetings`,
+           Supervisor_Communication = `Supervisor qualities [Communication]`,
+           Supervisor_Inclusiveness = `Supervisor qualities [Inclusiveness]`,
+           Supervisor_Empathy = `Supervisor qualities [Empathy]`,
+           Supervisor_SubjectMatter = `Supervisor qualities [Subject matter expertise]`,
+           Supervisor_Availability = `Supervisor qualities [Availability]`,
+           Supervisor_Project = `Supervisor qualities [Interest in project]`,
+           ExternalActivities = `External activities`,
+           FacilityAccess = `Access to facilities`,
+           Facilities_Desk = `Access to facilities [Desk]`,
+           Facilities_Computer = `Access to facilities [Computer]`,
+           Facilities_Server = `Access to facilities [Server/HPC]`,
+           Facilities_Lab = `Access to facilities [Laboratory]`,
+           Facilities_MeetingRooms = `Access to facilities [Meeting rooms]`,
+           Facilities_BreakRooms = `Access to facilities [Break rooms]`,
+           FinancialSupport = `Access to financial support`,
+           FinancialSupport_TravelApp = `Access to financial support [Travel/conference funding (with application)]`,
+           FinancialSupport_TravelNoApp = `Access to financial support [Travel/conference funding (without application)]`,
+           FinancialSupport_TopUp = `Access to financial support [Top-up scholarships]`,
+           FinancialSupport_HasOther = `Access to financial support [IsOther]`,
+           FinancialSupport_Other = `Access to financial support [Other]`,
+           OtherSupport = `Other support`,
+           OtherSupport_Group = `Other support [Other people in my research group]`,
+           OtherSupport_Institute = `Other support [Other people in my institute/university]`,
+           OtherSupport_Students = `Other support [Other students]`,
+           OtherSupport_People = `Other support [Other people in my life (friends/family etc.)]`,
+           OtherSupport_None = `Other support [No I don't feel like I have support from other people]`,
+           SupervisorDetails = `More about your supervisor relationship`,
+           FamiliarityCOMBINE = `Familiarity with COMBINE`,
+           COMBINE_Survey = `Familiarity with COMBINE [This survey]`,
+           COMBINE_SocialMedia = `Familiarity with COMBINE [Follow COMBINE on social media]`,
+           COMBINE_Newsletter = `Familiarity with COMBINE [Subscribe to COMBINE mailing list]`,
+           COMBINE_Workshop = `Familiarity with COMBINE [Attended COMBINE workshop]`,
+           COMBINE_Seminar = `Familiarity with COMBINE [Attended COMBINE seminar]`,
+           COMBINE_Symposium = `Familiarity with COMBINE [Attended COMBINE Symposium]`,
+           FamiliarityABACBS = `Familiarity with ABACBS`,
+           ABACBS_Member = `Familiarity with ABACBS [ABACBS student member]`,
+           ABACBS_SocialMedia = `Familiarity with ABACBS [Follow ABACBS on social media]`,
+           ABACBS_Newsletter = `Familiarity with ABACBS [Subscribe to the ABACBS newsletter]`,
+           ABABCS_Conference = `Familiarity with ABACBS [Attended ABACBS conference]`,
+           ABACBS_Event = `Familiarity with ABACBS [Attended another ABACBS event]`,
+           ABACBS_None = `Familiarity with ABACBS [I haven't had any involvement with ABACBS]`,
+           MembershipABACBS = `ABACBS Membership`,
+           Membership_National = `ABACBS Membership [Member of a national society]`,
+           Membership_EventDiscount = `ABACBS Membership [Discounts for ABACBS/COMBINE events]`,
+           Membership_ConferenceDiscount = `ABACBS Membership [Discounts for ABACBS conference/COMBINE Symposium]`,
+           Membership_Travel = `ABACBS Membership [Access to ABACBS travel bursaries]`,
+           Membership_Prizes = `ABACBS Membership [Access to ABACBS prizes and awards]`,
+           Membership_CV = `ABACBS Membership [Looks good on a CV]`,
+           Membership_Direction = `ABACBS Membership [A say in the direction of the society]`,
+           Membership_NoBenefits = `ABACBS Membership [I don't think there are any benefits of membership for students]`,
+           EventsCOMBINE = `Future COMBINE events`,
+           Events_Programming = `Future COMBINE events [General programming workshops (e.g. R Python Git)]`,
+           Events_Bioinformatics = `Future COMBINE events [Bioinformatics focused workshops (e.g. RNA-seq analysis)]`,
+           Events_Skills = `Future COMBINE events [Professional skills workshops (e.g. presenting writing)]`,
+           Events_Statistics = `Future COMBINE events [Statistics workshops]`,
+           Events_Lab = `Future COMBINE events [Lab skills workshops]`,
+           Events_OneOff = `Future COMBINE events [Once off seminars]`,
+           Events_InvitedSeminar = `Future COMBINE events [Regular seminar series (invited speakers)]`,
+           Events_StudentSeminar = `Future COMBINE events [Regular seminar series (student speakers)]`,
+           Events_Social = `Future COMBINE events [Local social night]`,
+           Events_Symposium = `Future COMBINE events [COMBINE Symposium (annual student conference run in conjunction with the ABACBS conference)]`,
+           Events_NotInterested =`Future COMBINE events [I'm not interested in events]`,
+           Events_HasOther = `Future COMBINE events [IsOther]`,
+           Events_Other = `Future COMBINE events [Other]`,
+           WhatCanWeDo = `What can we do for you?`)
+
+colnames(responses)
+```
+
+```{r save}
+write_tsv(responses, here("data/responses_clean.csv"))
 ```
 
 Session info
