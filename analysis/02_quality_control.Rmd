@@ -172,6 +172,33 @@ responses <- responses %>%
            responses$`Research component?` != "No")
 ```
 
+Course level
+============
+
+Let's check what responses we got for the question about course level.
+
+```{r course-level}
+unique(responses$`Course level`)
+```
+
+One of the responses is "Masters(Coursework & Research)". Most people doing
+coursework masters will have a research project and there are later questions
+that will check this so let's change this to "Masters (Coursework)"
+
+```{r course-level-set}
+responses <- responses %>%
+    mutate(`Course level` = if_else(
+        `Course level` == "Masters(Coursework & Research)",
+        "Masters (Coursework)", `Course level`))
+```
+
+Now the responses look like:
+
+```{r course-level-plot}
+ggplot(responses, aes(x = `Course level`)) +
+    geom_bar()
+```
+
 Academic background
 ===================
 
