@@ -380,8 +380,68 @@ coursework <- responses %>%
 
 The questions about different types of classes ask for a percentage but there
 are a few very low values. This suggests that some people didn't quite
-understand what the question was asking for. For the moment we will leave these
-as they are.
+understand what the question was asking for. Let's correct that by dividing
+these low responses by the total number of classes.
+
+```{r class-types-set}
+responses <- responses %>%
+    mutate(`Computational classes` =
+               if_else(`Computational classes` < 10,
+                       as.integer(`Computational classes` / Classes * 100),
+                       `Computational classes`),
+           `Statistical classes` =
+               if_else(`Statistical classes` < 10,
+                       as.integer(`Statistical classes` / Classes * 100),
+                       `Statistical classes`),
+           `Biological classes` =
+               if_else(`Biological classes` < 10,
+                       as.integer(`Biological classes` / Classes * 100),
+                       `Biological classes`))
+
+coursework <- responses %>%
+    filter(CourseworkCurrent == "Yes")
+```
+
+```{r class-types-plot}
+plot_data <- coursework %>%
+    select(ends_with("classes"), -Classes) %>%
+    gather(key = "Type", value = "Number") %>%
+    mutate(Type = str_remove(Type, " classes"))
+
+ggplot(plot_data, aes(x = Number)) +
+    geom_bar() +
+    facet_wrap(~ Type)
+```
+
+Now there is one student that has values above 100 percent. We can't be sure 
+what these are supposed to be so we wil set them to NA and filter them later.
+
+```{r class-types-set-na}
+responses <- responses %>%
+    mutate(`Computational classes` =
+               if_else(`Computational classes` > 100,
+                       NA_integer_, `Computational classes`),
+           `Statistical classes` =
+               if_else(`Statistical classes` > 100,
+                       NA_integer_, `Statistical classes`),
+           `Biological classes` =
+               if_else(`Biological classes` > 100,
+                       NA_integer_, `Biological classes`))
+
+coursework <- responses %>%
+    filter(CourseworkCurrent == "Yes")
+```
+
+```{r class-types-plot2}
+plot_data <- coursework %>%
+    select(ends_with("classes"), -Classes) %>%
+    gather(key = "Type", value = "Number") %>%
+    mutate(Type = str_remove(Type, " classes"))
+
+ggplot(plot_data, aes(x = Number)) +
+    geom_bar() +
+    facet_wrap(~ Type)
+```
 
 Research
 ========
@@ -908,7 +968,7 @@ responses <- responses %>%
            Classes,
            Classes_Computational = `Computational classes`,
            Classes_Statistical = `Statistical classes`,
-           Clases_Biological = `Biological classes`,
+           Classes_Biological = `Biological classes`,
            CourseworkTime = `Coursework time`,
            Assignments,
            Exams,

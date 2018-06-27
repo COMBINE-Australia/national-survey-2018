@@ -1,0 +1,550 @@
+---
+title: "Analysis"
+author: "COMBINE Australia"
+date: '`r Sys.Date()`'
+output:
+  html_document:
+    number_sections: yes
+    theme: yeti
+    toc: yes
+    toc_float: yes
+    df_print: paged
+---
+
+Code version: `r system("git log -1 --format=oneline | cut -d' ' -f1", intern = TRUE)`
+
+```{r knitr, include = FALSE}
+DOCNAME = "analysis"
+knitr::opts_chunk$set(autodep        = TRUE,
+                      cache          = FALSE,
+                      cache.path     = paste0("cache/", DOCNAME, "/"),
+                      cache.comments = TRUE,
+                      echo           = FALSE,
+                      error          = FALSE,
+                      fig.align      = "center",
+                      fig.path       = paste0("figures/", DOCNAME, "/"),
+                      fig.width      = 10,
+                      fig.height     = 8,
+                      message        = FALSE,
+                      warning        = FALSE)
+```
+
+```{r libaries, cache = FALSE}
+library("here")
+library("tidyverse")
+```
+
+```{r source, cache = FALSE}
+
+```
+
+Introduction
+============
+
+In this document we are going to do a more thorough analysis of the survey
+responses, splitting them up in different ways etc. This will help us decide
+what to include in the final report.
+
+```{r load}
+
+col_types <- cols(
+    Timestamp                     = col_datetime(format = ""),
+    Gender                        = col_character(),
+    Age                           = col_integer(),
+    IndigenousStatus              = col_character(),
+    Location                      = col_character(),
+    CourseLevel                   = col_character(),
+    CourseYear                    = col_character(),
+    Residency                     = col_character(),
+    TimeCommitment                = col_character(),
+    Background                    = col_character(),
+    BackgroundGrouped             = col_character(),
+    Competencies_Genetics         = col_integer(),
+    Competencies_Biochemistry     = col_integer(),
+    Competencies_Probability      = col_integer(),
+    Competencies_Testing          = col_integer(),
+    Competencies_LinearAlgebra    = col_integer(),
+    Competencies_Algorithms       = col_integer(),
+    Competencies_Programming      = col_integer(),
+    Competencies_SoftwareDev      = col_integer(),
+    Finances                      = col_character(),
+    Finances_Government           = col_logical(),
+    Finances_University           = col_logical(),
+    Finances_TopUp                = col_logical(),
+    Finances_PartTime             = col_logical(),
+    Finances_FullTime             = col_logical(),
+    Finances_Parental             = col_logical(),
+    Finances_Savings              = col_logical(),
+    Finances_HasOther             = col_logical(),
+    Finances_Other                = col_character(),
+    CourseworkComponent           = col_character(),
+    CourseworkCurrent             = col_character(),
+    Classes                       = col_double(),
+    Classes_Computational         = col_integer(),
+    Classes_Statistical           = col_integer(),
+    Clases_Biological             = col_integer(),
+    CourseworkTime                = col_double(),
+    Assignments                   = col_integer(),
+    Exams                         = col_integer(),
+    Cohort                        = col_character(),
+    Support                       = col_character(),
+    CourseworkDetails             = col_character(),
+    ResearchComponent             = col_character(),
+    ResearchCurrent               = col_character(),
+    ResearchPercentage            = col_integer(),
+    ResearchTime                  = col_integer(),
+    ResearchFocus                 = col_character(),
+    Focus_GenomicVariants         = col_logical(),
+    Focus_GeneExpression          = col_logical(),
+    Focus_Metagenomics            = col_logical(),
+    Focus_Proteomics              = col_logical(),
+    Focus_DataVis                 = col_logical(),
+    Focus_Methods                 = col_logical(),
+    Focus_Cancer                  = col_logical(),
+    Focus_Analysis                = col_logical(),
+    Focus_CellBiology             = col_logical(),
+    Focus_PlantBiology            = col_logical(),
+    Focus_RareDisease             = col_logical(),
+    Focus_Metabolomics            = col_logical(),
+    Focus_MicrobialBiology        = col_logical(),
+    Focus_HumanBiology            = col_logical(),
+    Focus_ModelOrganisims         = col_logical(),
+    Focus_NonModelOrganisims      = col_logical(),
+    Focus_HasOther                = col_logical(),
+    Focus_Other                   = col_character(),
+    Institute                     = col_character(),
+    Computational                 = col_integer(),
+    Technologies                  = col_character(),
+    Technologies_RNASeq           = col_logical(),
+    Technologies_WholeGenome      = col_logical(),
+    Technologies_Exome            = col_logical(),
+    Technologies_ShortRead        = col_logical(),
+    Technologies_LongRead         = col_logical(),
+    Technologies_MassSpec         = col_logical(),
+    Technologies_Array            = col_logical(),
+    Technologies_FlowCytometry    = col_logical(),
+    Technologies_HasOther         = col_logical(),
+    Technologes_Other             = col_character(),
+    ProgrammingLanguages          = col_character(),
+    Programming_R                 = col_logical(),
+    Programming_Python            = col_logical(),
+    Programming_Shell             = col_logical(),
+    Programming_Git               = col_logical(),
+    Programming_Perl              = col_logical(),
+    Programming_CCpp              = col_logical(),
+    Programming_MATLAB            = col_logical(),
+    Programming_HasOther          = col_logical(),
+    Programming_Other             = col_character(),
+    Collaboration                 = col_character(),
+    Collaboration_YourGroup       = col_logical(),
+    Collaboration_OtherGroups     = col_logical(),
+    Collaboration_ExternalGroups  = col_logical(),
+    Collaboration_OtherStudents   = col_logical(),
+    ResearchGroup                 = col_character(),
+    OtherStudents                 = col_character(),
+    ResearchDetails               = col_character(),
+    SupervisorNumber              = col_integer(),
+    PrimaryPercentage             = col_double(),
+    PrimaryGender                 = col_character(),
+    SecondayGender                = col_character(),
+    FormalMeetings                = col_character(),
+    InformalMeetings              = col_character(),
+    Supervisor_Communication      = col_integer(),
+    Supervisor_Inclusiveness      = col_integer(),
+    Supervisor_Empathy            = col_integer(),
+    Supervisor_SubjectMatter      = col_integer(),
+    Supervisor_Availability       = col_integer(),
+    Supervisor_Project            = col_integer(),
+    ExternalActivities            = col_character(),
+    FacilityAccess                = col_character(),
+    Facilities_Desk               = col_logical(),
+    Facilities_Computer           = col_logical(),
+    Facilities_Server             = col_logical(),
+    Facilities_Lab                = col_logical(),
+    Facilities_MeetingRooms       = col_logical(),
+    Facilities_BreakRooms         = col_logical(),
+    FinancialSupport              = col_character(),
+    FinancialSupport_TravelApp    = col_logical(),
+    FinancialSupport_TravelNoApp  = col_logical(),
+    FinancialSupport_TopUp        = col_logical(),
+    FinancialSupport_HasOther     = col_logical(),
+    FinancialSupport_Other        = col_character(),
+    OtherSupport                  = col_character(),
+    OtherSupport_Group            = col_logical(),
+    OtherSupport_Institute        = col_logical(),
+    OtherSupport_Students         = col_logical(),
+    OtherSupport_People           = col_logical(),
+    OtherSupport_None             = col_logical(),
+    SupervisorDetails             = col_character(),
+    FamiliarityCOMBINE            = col_character(),
+    COMBINE_Survey                = col_logical(),
+    COMBINE_SocialMedia           = col_logical(),
+    COMBINE_Newsletter            = col_logical(),
+    COMBINE_Workshop              = col_logical(),
+    COMBINE_Seminar               = col_logical(),
+    COMBINE_Symposium             = col_logical(),
+    FamiliarityABACBS             = col_character(),
+    ABACBS_Member                 = col_logical(),
+    ABACBS_SocialMedia            = col_logical(),
+    ABACBS_Newsletter             = col_logical(),
+    ABABCS_Conference             = col_logical(),
+    ABACBS_Event                  = col_logical(),
+    ABACBS_None                   = col_logical(),
+    MembershipABACBS              = col_character(),
+    Membership_National           = col_logical(),
+    Membership_EventDiscount      = col_logical(),
+    Membership_ConferenceDiscount = col_logical(),
+    Membership_Travel             = col_logical(),
+    Membership_Prizes             = col_logical(),
+    Membership_CV                 = col_logical(),
+    Membership_Direction          = col_logical(),
+    Membership_NoBenefits         = col_logical(),
+    EventsCOMBINE                 = col_character(),
+    Events_Programming            = col_logical(),
+    Events_Bioinformatics         = col_logical(),
+    Events_Skills                 = col_logical(),
+    Events_Statistics             = col_logical(),
+    Events_Lab                    = col_logical(),
+    Events_OneOff                 = col_logical(),
+    Events_InvitedSeminar         = col_logical(),
+    Events_StudentSeminar         = col_logical(),
+    Events_Social                 = col_logical(),
+    Events_Symposium              = col_logical(),
+    Events_NotInterested          = col_logical(),
+    Events_HasOther               = col_logical(),
+    Events_Other                  = col_character(),
+    WhatCanWeDo                   = col_character()
+)
+
+responses <- read_tsv(here("data/responses_clean.tsv"),
+                      col_types = col_types)
+```
+
+
+Demographics
+============
+
+Gender
+------
+
+```{r gender}
+ggplot(responses, aes(x = Gender, y = ..prop.., group = 1)) + 
+  geom_bar() + 
+  scale_y_continuous(labels = scales::percent_format())
+```
+
+Age
+---
+
+```{r age}
+ggplot(responses, aes(x = 1, y = Age)) +
+    geom_boxplot()
+```
+
+### By gender
+
+```{r age-gender}
+ggplot(responses, aes(x = Gender, y = Age, colour = Gender)) +
+    geom_boxplot()
+```
+
+### By course
+
+```{r age-course}
+ggplot(responses, aes(x = CourseLevel, y = Age)) +
+    geom_boxplot() +
+    coord_flip()
+```
+
+### By location
+
+```{r age-location}
+ggplot(responses, aes(x = Location, y = Age)) +
+    geom_boxplot() +
+    coord_flip()
+```
+
+### By residency
+
+```{r age-residency}
+ggplot(responses, aes(x = Residency, y = Age)) +
+    geom_boxplot()
+```
+
+Location
+--------
+
+```{r location}
+ggplot(responses, aes(x = Location)) +
+    geom_bar()
+```
+
+### By gender
+
+```{r location}
+ggplot(responses, aes(x = Location, fill = Gender)) +
+    geom_bar()
+```
+
+Course level
+------------
+
+```{r course-level}
+ggplot(responses, aes(x = CourseLevel, y = ..prop.., group = 1)) + 
+  geom_bar() + 
+  scale_y_continuous(labels = scales::percent_format())
+```
+
+### By gender
+
+```{r course-level-gender}
+ggplot(responses,
+       aes(x = CourseLevel, fill = Gender)) + 
+  geom_bar()
+```
+
+### By residency
+
+```{r course-level-residency}
+ggplot(responses, aes(x = CourseLevel)) +
+    geom_bar() +
+    facet_wrap(~ Residency)
+```
+
+### By time commitment
+
+```{r course-level-time}
+ggplot(responses, aes(x = CourseLevel, fill = TimeCommitment)) +
+    geom_bar()
+```
+
+Course year
+-----------
+
+```{r course-year}
+ggplot(responses, aes(x = CourseYear)) +
+    geom_bar()
+```
+
+### By gender
+
+```{r course-year-gender}
+ggplot(responses, aes(x = CourseYear, fill = Gender)) +
+    geom_bar()
+```
+
+### By course
+
+```{r course-year-course}
+ggplot(responses, aes(x = CourseYear)) +
+    geom_bar() +
+    facet_wrap(~ CourseLevel, ncol = 1)
+```
+
+Residency
+---------
+
+```{r residency}
+ggplot(responses, aes(x = Residency, y = ..prop.., group = 1)) + 
+  geom_bar() + 
+  scale_y_continuous(labels = scales::percent_format())
+```
+
+### By gender
+
+```{r residency-gender}
+ggplot(responses, aes(x = Residency, fill = Gender)) +
+    geom_bar()
+```
+
+Time commitment
+---------------
+
+```{r time}
+ggplot(responses, aes(x = TimeCommitment)) +
+    geom_bar()
+```
+
+### By gender
+
+```{r time-gender}
+ggplot(responses, aes(x = TimeCommitment, fill = Gender)) +
+    geom_bar()
+```
+
+Background
+----------
+
+```{r background}
+ggplot(responses, aes(x = BackgroundGrouped)) +
+    geom_bar()
+```
+
+### By gender
+
+```{r background-gender}
+ggplot(responses, aes(x = BackgroundGrouped, fill = Gender)) +
+    geom_bar()
+```
+
+Competencies
+------------
+
+```{r competencies}
+responses %>%
+    select(starts_with("Competencies")) %>%
+    gather(key = "Competency", value = "Rating") %>%
+    mutate(Competency = str_remove(Competency, "Competencies_")) %>%
+    group_by(Competency, Rating) %>%
+    summarise(Count = n()) %>%
+    mutate(Prop = Count / sum(Count)) %>%
+    ggplot(aes(x = Competency, y = Prop, fill = Rating)) +
+    geom_col() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+### By gender
+
+```{r competencies-gender}
+responses %>%
+    select(Gender, starts_with("Competencies")) %>%
+    gather(key = "Competency", value = "Rating", -Gender) %>%
+    mutate(Competency = str_remove(Competency, "Competencies_")) %>%
+    group_by(Gender, Competency, Rating) %>%
+    summarise(Count = n()) %>%
+    mutate(Prop = Count / sum(Count)) %>%
+    ggplot(aes(x = Competency, y = Prop, fill = Rating)) +
+    geom_col() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+    facet_wrap(~ Gender, ncol = 1)
+```
+
+### By background
+
+```{r competencies-background}
+responses %>%
+    select(BackgroundGrouped, starts_with("Competencies")) %>%
+    gather(key = "Competency", value = "Rating", -BackgroundGrouped) %>%
+    mutate(Competency = str_remove(Competency, "Competencies_")) %>%
+    group_by(BackgroundGrouped, Competency, Rating) %>%
+    summarise(Count = n()) %>%
+    mutate(Prop = Count / sum(Count)) %>%
+    ggplot(aes(x = Competency, y = Prop, fill = Rating)) +
+    geom_col() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+    facet_wrap(~ BackgroundGrouped, ncol = 1)
+```
+
+Finances
+--------
+
+```{r finances}
+responses %>%
+    select(starts_with("Finances_")) %>%
+    gather(key = "Finance", value = "Has") %>%
+    mutate(Finance = str_remove(Finance, "Finances_")) %>%
+    filter(Has == TRUE) %>%
+    ggplot(aes(x = Finance)) +
+    geom_bar()
+```
+
+### By gender
+
+```{r finances-gender}
+responses %>%
+    select(starts_with("Finances_"), Gender) %>%
+    gather(key = "Finance", value = "Has", -Gender) %>%
+    mutate(Finance = str_remove(Finance, "Finances_")) %>%
+    filter(Has == TRUE) %>%
+    ggplot(aes(x = Finance)) +
+    geom_bar() +
+    facet_wrap(~ Gender, ncol = 1)
+```
+
+### By course
+
+```{r finances-course}
+responses %>%
+    select(starts_with("Finances_"), CourseLevel) %>%
+    filter(CourseLevel %in% c("PhD", "Masters (Coursework)")) %>%
+    gather(key = "Finance", value = "Has", -CourseLevel) %>%
+    mutate(Finance = str_remove(Finance, "Finances_")) %>%
+    filter(Has == TRUE) %>%
+    group_by(CourseLevel) %>%
+    mutate(CourseCount = n()) %>%
+    group_by(CourseLevel, Finance, CourseCount) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / CourseCount) %>%
+    ggplot(aes(x = Finance, y = Prop)) +
+    geom_col() +
+    facet_wrap(~ CourseLevel, ncol = 1)
+```
+
+Coursework
+==========
+
+```{r coursework}
+coursework <- responses %>%
+    filter(CourseworkCurrent == "Yes")
+```
+
+Classes
+-------
+
+```{r classes}
+ggplot(coursework, aes(x = factor(Classes), y = CourseworkTime,
+                       colour = CourseLevel)) +
+    geom_jitter(height = 0, width = 0.1)
+```
+
+Assignments
+-----------
+
+```{r assignments}
+ggplot(coursework, aes(x = factor(Classes), y = Assignments,
+                       colour = CourseLevel)) +
+    geom_jitter(height = 0, width = 0.1)
+```
+
+Exams
+-----
+
+```{r exams}
+ggplot(coursework, aes(x = factor(Classes), y = Exams,
+                       colour = CourseLevel)) +
+    geom_jitter(height = 0, width = 0.1)
+```
+
+Class types
+-----------
+
+```{r class-types}
+coursework %>%
+    select(Classes_Computational, Classes_Statistical, Classes_Biological) %>%
+    filter(!is.na(Classes_Computational)) %>%
+    arrange(Classes_Statistical, Classes_Computational, Classes_Biological) %>%
+    mutate(Person = row_number()) %>%
+    gather(key = Type, value = Percent, -Person) %>%
+    mutate(Type = str_remove(Type, "Classes_")) %>%
+    ggplot(aes(x = factor(Person), y = Percent, fill = Type)) +
+    geom_col()
+```
+
+
+Session info
+============
+
+```{r session-info, cache = FALSE}
+devtools::session_info()
+```
+
+```{r cleanup-docs, cache = FALSE}
+doc.files <- c(list.files(pattern = "pdf"),
+               list.files(pattern = "html"),
+               list.files(pattern = "docx"))
+
+for (file in doc.files) {
+    file.rename(file, file.path("../docs", file))
+}
+```

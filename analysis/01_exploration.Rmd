@@ -265,6 +265,14 @@ ggplot(coursework, aes(x = Assignments)) +
     geom_bar()
 ```
 
+Exams
+-----
+
+```{r exams}
+ggplot(coursework, aes(x = Exams)) +
+    geom_bar()
+```
+
 Class types
 -----------
 
