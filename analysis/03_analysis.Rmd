@@ -82,7 +82,7 @@ col_types <- cols(
     Classes                       = col_double(),
     Classes_Computational         = col_integer(),
     Classes_Statistical           = col_integer(),
-    Clases_Biological             = col_integer(),
+    Classes_Biological             = col_integer(),
     CourseworkTime                = col_double(),
     Assignments                   = col_integer(),
     Exams                         = col_integer(),
@@ -146,7 +146,7 @@ col_types <- cols(
     SupervisorNumber              = col_integer(),
     PrimaryPercentage             = col_double(),
     PrimaryGender                 = col_character(),
-    SecondayGender                = col_character(),
+    SecondaryGender               = col_character(),
     FormalMeetings                = col_character(),
     InformalMeetings              = col_character(),
     Supervisor_Communication      = col_integer(),
@@ -281,7 +281,7 @@ ggplot(responses, aes(x = Location)) +
 
 ### By gender
 
-```{r location}
+```{r location-gender}
 ggplot(responses, aes(x = Location, fill = Gender)) +
     geom_bar()
 ```
@@ -531,6 +531,1015 @@ coursework %>%
     geom_col()
 ```
 
+Support
+-------
+
+```{r coursework-support}
+coursework %>%
+    select(Cohort, Support) %>%
+    gather(key = Type, value = IsTrue) %>%
+    filter(IsTrue == "Yes") %>%
+    ggplot(aes(x = Type)) +
+    geom_bar()
+```
+
+### By gender
+
+```{r coursework-support-gender}
+coursework %>%
+    select(Cohort, Support, Gender) %>%
+    gather(key = Type, value = IsTrue, -Gender) %>%
+    filter(IsTrue == "Yes") %>%
+    ggplot(aes(x = Type, fill = Gender)) +
+    geom_bar() +
+    facet_wrap(~ Gender, ncol = 1)
+```
+
+### By residency
+
+```{r coursework-support-residency}
+coursework %>%
+    select(Cohort, Support, Residency) %>%
+    gather(key = Type, value = IsTrue, -Residency) %>%
+    filter(IsTrue == "Yes") %>%
+    ggplot(aes(x = Type, fill = Residency)) +
+    geom_bar() +
+    facet_wrap(~ Residency, ncol = 1)
+```
+
+Research
+========
+
+```{r research}
+research <- responses %>%
+    filter(ResearchCurrent == "Yes")
+```
+
+Percentage
+----------
+
+```{r percentage}
+ggplot(research, aes(x = ResearchPercentage)) +
+    geom_histogram(binwidth = 10, boundary = 100)
+```
+
+Time
+----
+
+```{r researchtime}
+ggplot(research, aes(x = ResearchTime)) +
+    geom_histogram(binwidth = 10, boundary = 100)
+```
+
+Focus
+-----
+
+```{r focus}
+research %>%
+    select(starts_with("Focus_")) %>%
+    mutate(GroupSize = n()) %>%
+    gather(key = "Focus", value = "Has", -GroupSize) %>%
+    filter(Has == TRUE) %>%
+    mutate(Focus = str_remove(Focus, "Focus_")) %>%
+    group_by(Focus, GroupSize) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Focus = factor(Focus, levels = Focus),
+           Focus = forcats::fct_relevel(Focus, "HasOther", after = 0)) %>%
+    ggplot(aes(x = Focus, y = Prop)) +
+    geom_col() +
+    coord_flip()
+```
+
+### By gender
+
+```{r focus-gender}
+research %>%
+    select(starts_with("Focus_"), Gender) %>%
+    group_by(Gender) %>%
+    mutate(GroupSize = n()) %>%
+    ungroup() %>%
+    gather(key = "Focus", value = "Has", -GroupSize, -Gender) %>%
+    filter(Has == TRUE) %>%
+    mutate(Focus = str_remove(Focus, "Focus_")) %>%
+    group_by(Focus, GroupSize, Gender) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Focus = factor(Focus, levels = unique(Focus)),
+           Focus = forcats::fct_relevel(Focus, "HasOther", after = 0)) %>%
+    ggplot(aes(x = Focus, y = Prop, fill = Gender)) +
+    geom_col() +
+    coord_flip() +
+    facet_wrap(~ Gender, nrow = 1)
+```
+
+### By residency
+
+```{r focus-residency}
+research %>%
+    select(starts_with("Focus_"), Residency) %>%
+    group_by(Residency) %>%
+    mutate(GroupSize = n()) %>%
+    ungroup() %>%
+    gather(key = "Focus", value = "Has", -GroupSize, -Residency) %>%
+    filter(Has == TRUE) %>%
+    mutate(Focus = str_remove(Focus, "Focus_")) %>%
+    group_by(Focus, GroupSize, Residency) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Focus = factor(Focus, levels = unique(Focus)),
+           Focus = forcats::fct_relevel(Focus, "HasOther", after = 0)) %>%
+    ggplot(aes(x = Focus, y = Prop, fill = Residency)) +
+    geom_col() +
+    coord_flip() +
+    facet_wrap(~ Residency, nrow = 1)
+```
+
+### By background
+
+```{r focus-background}
+research %>%
+    select(starts_with("Focus_"), BackgroundGrouped) %>%
+    group_by(BackgroundGrouped) %>%
+    mutate(GroupSize = n()) %>%
+    ungroup() %>%
+    gather(key = "Focus", value = "Has", -GroupSize, -BackgroundGrouped) %>%
+    filter(Has == TRUE) %>%
+    mutate(Focus = str_remove(Focus, "Focus_")) %>%
+    group_by(Focus, GroupSize, BackgroundGrouped) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Focus = factor(Focus, levels = unique(Focus)),
+           Focus = forcats::fct_relevel(Focus, "HasOther", after = 0)) %>%
+    ggplot(aes(x = Focus, y = Prop, fill = BackgroundGrouped)) +
+    geom_col() +
+    coord_flip() +
+    facet_wrap(~ BackgroundGrouped, nrow = 1) +
+    theme(legend.position = "bottom")
+```
+
+Institute
+---------
+
+```{r institute}
+ggplot(research, aes(x = Institute)) +
+    geom_bar()
+```
+
+### By gender
+
+```{r institute-gender}
+ggplot(research, aes(x = Institute, fill = Gender)) +
+    geom_bar()
+```
+
+### By residency
+
+```{r institute-residency}
+ggplot(research, aes(x = Institute, fill = Residency)) +
+    geom_bar()
+```
+
+### By background
+
+```{r institute-background}
+ggplot(research, aes(x = Institute, fill = BackgroundGrouped)) +
+    geom_bar(position = "dodge")
+```
+
+Computational
+-------------
+
+```{r computational}
+ggplot(research, aes(x = Computational)) +
+    geom_histogram(binwidth = 10, boundary = 100)
+```
+
+### By gender
+
+```{r computational-gender}
+ggplot(research, aes(x = Computational, fill = Gender)) +
+    geom_histogram(binwidth = 10, boundary = 100) +
+    facet_wrap(~ Gender, ncol = 1)
+```
+
+### By background
+
+```{r computational-background}
+ggplot(research, aes(x = Computational, fill = BackgroundGrouped)) +
+    geom_histogram(binwidth = 10, boundary = 100) +
+    facet_wrap(~ BackgroundGrouped, ncol = 1, scales = "free_y")
+```
+
+Technologies
+------------
+
+```{r technologies}
+research %>%
+    select(starts_with("Technologies")) %>%
+    mutate(GroupSize = n()) %>%
+    gather(key = "Technology", value = "Has", -GroupSize) %>%
+    filter(Has == TRUE) %>%
+    mutate(Technology = str_remove(Technology, "Technologies_")) %>%
+    group_by(Technology, GroupSize) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Technology = factor(Technology, levels = Technology),
+           Technology = forcats::fct_relevel(Technology, "HasOther", after = 0)) %>%
+    ggplot(aes(x = Technology, y = Prop)) +
+    geom_col() +
+    coord_flip()
+```
+
+Programming
+-----------
+
+```{r programming}
+research %>%
+    select(starts_with("Programming")) %>%
+    mutate(GroupSize = n()) %>%
+    gather(key = "Language", value = "Has", -GroupSize) %>%
+    filter(Has == TRUE) %>%
+    mutate(Language = str_remove(Language, "Programming_")) %>%
+    group_by(Language, GroupSize) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Language = factor(Language, levels = Language),
+           Language = forcats::fct_relevel(Language, "HasOther", after = 0)) %>%
+    ggplot(aes(x = Language, y = Prop)) +
+    geom_col() +
+    coord_flip()
+```
+
+Collaboration
+-------------
+
+```{r collaboration}
+research %>%
+    select(starts_with("Collaboration")) %>%
+    mutate(GroupSize = n()) %>%
+    gather(key = "Type", value = "Has", -GroupSize) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "Collaboration_")) %>%
+    group_by(Type, GroupSize) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = Type)) %>%
+    ggplot(aes(x = Type, y = Prop)) +
+    geom_col() +
+    coord_flip()
+```
+
+### By gender
+
+```{r collaboration-gender}
+research %>%
+    select(starts_with("Collaboration"), Gender) %>%
+    group_by(Gender) %>%
+    mutate(GroupSize = n()) %>%
+    ungroup() %>%
+    gather(key = "Type", value = "Has", -GroupSize, -Gender) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "Collaboration_")) %>%
+    group_by(Type, GroupSize, Gender) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = unique(Type))) %>%
+    ggplot(aes(x = Type, y = Prop, fill = Gender)) +
+    geom_col() +
+    coord_flip() +
+    facet_wrap(~ Gender, ncol = 1)
+```
+
+### By residency
+
+```{r collaboration-residency}
+research %>%
+    select(starts_with("Collaboration"), Residency) %>%
+    group_by(Residency) %>%
+    mutate(GroupSize = n()) %>%
+    ungroup() %>%
+    gather(key = "Type", value = "Has", -GroupSize, -Residency) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "Collaboration_")) %>%
+    group_by(Type, GroupSize, Residency) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = unique(Type))) %>%
+    ggplot(aes(x = Type, y = Prop, fill = Residency)) +
+    geom_col() +
+    coord_flip() +
+    facet_wrap(~ Residency, ncol = 1)
+```
+
+### By background
+
+```{r collaboration-background}
+research %>%
+    select(starts_with("Collaboration"), BackgroundGrouped) %>%
+    group_by(BackgroundGrouped) %>%
+    mutate(GroupSize = n()) %>%
+    ungroup() %>%
+    gather(key = "Type", value = "Has", -GroupSize, -BackgroundGrouped) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "Collaboration_")) %>%
+    group_by(Type, GroupSize, BackgroundGrouped) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = unique(Type))) %>%
+    ggplot(aes(x = Type, y = Prop, fill = BackgroundGrouped)) +
+    geom_col() +
+    coord_flip() +
+    facet_wrap(~ BackgroundGrouped, ncol = 1) +
+    theme(legend.position = "bottom")
+```
+
+Group
+-----
+
+```{r group}
+ggplot(research, aes(x = ResearchGroup)) +
+    geom_bar()
+```
+
+### By gender
+
+```{r group-gender}
+ggplot(research, aes(x = ResearchGroup, fill = Gender)) +
+    geom_bar()
+```
+
+### By residency
+
+```{r group-residency}
+ggplot(research, aes(x = ResearchGroup, fill = Residency)) +
+    geom_bar() +
+    facet_wrap(~ Residency)
+```
+
+Students
+--------
+
+```{r students}
+ggplot(research, aes(x = OtherStudents)) +
+    geom_bar()
+```
+
+Supervisors
+===========
+
+Number
+------
+
+```{r number}
+ggplot(research, aes(x = factor(SupervisorNumber))) +
+    geom_bar()
+```
+
+### By gender
+
+```{r number-gender}
+ggplot(research, aes(x = factor(SupervisorNumber), fill = Gender)) +
+    geom_bar()
+```
+
+### By residency
+
+```{r number-residency}
+ggplot(research, aes(x = factor(SupervisorNumber), fill = Residency)) +
+    geom_bar()
+```
+
+### By course
+
+```{r number-course}
+ggplot(research, aes(x = factor(SupervisorNumber), fill = CourseLevel)) +
+    geom_bar()
+```
+
+Primary percentage
+------------------
+
+```{r primarypercentage}
+ggplot(research, aes(x = PrimaryPercentage)) +
+    geom_histogram(binwidth = 10, boundary = 100)
+```
+
+### By gender
+
+```{r primarypercentage-gender}
+ggplot(research, aes(x = PrimaryPercentage, fill = Gender)) +
+    geom_histogram(binwidth = 10, boundary = 100)
+```
+
+### By primary gender
+
+```{r primarypercentage-primarygender}
+ggplot(research, aes(x = PrimaryPercentage, fill = PrimaryGender)) +
+    geom_histogram(binwidth = 10, boundary = 100)
+```
+
+### By secondary gender
+
+```{r primarypercentage-secondarygender}
+ggplot(research, aes(x = PrimaryPercentage, fill = SecondaryGender)) +
+    geom_histogram(binwidth = 10, boundary = 100)
+```
+
+Primary gender
+--------------
+
+```{r primarygender}
+ggplot(research, aes(x = PrimaryGender)) +
+    geom_bar()
+```
+
+### By gender
+
+```{r primarygender-gender}
+ggplot(research, aes(x = PrimaryGender, fill = Gender)) +
+    geom_bar()
+```
+
+### By residency
+
+```{r primarygender-residency}
+ggplot(research, aes(x = PrimaryGender, fill = Residency)) +
+    geom_bar()
+```
+
+Secondary gender
+----------------
+
+```{r secondarygender}
+ggplot(research, aes(x = SecondaryGender)) +
+    geom_bar()
+```
+
+### By gender
+
+```{r secondarygender-gender}
+ggplot(research, aes(x = SecondaryGender, fill = Gender)) +
+    geom_bar()
+```
+
+### By primary gender
+
+```{r secondarygender-primarygender}
+ggplot(research, aes(x = SecondaryGender, fill = PrimaryGender)) +
+    geom_bar()
+```
+
+Both gender
+-----------
+
+```{r}
+research %>%
+    mutate(BothGender = paste0(PrimaryGender, SecondaryGender)) %>%
+    ggplot(aes(x = BothGender, fill = Gender)) +
+    geom_bar()
+```
+
+Formal meetings
+---------------
+
+```{r formalmeetings}
+ggplot(research, aes(x = FormalMeetings)) +
+    geom_bar()
+```
+
+### By gender
+
+```{r formalmeetings-gender}
+research %>%
+    mutate(FormalMeetings = factor(FormalMeetings,
+                                   levels = c("Once a week",
+                                              "Once a fortnight",
+                                              "Once a month",
+                                              "Once every six months",
+                                              "Once a year"))) %>%
+ggplot(aes(x = FormalMeetings, fill = Gender)) +
+    geom_bar() +
+    facet_wrap(~ Gender, ncol = 1)
+```
+
+### By primary gender
+
+```{r formalmeetings-primarygender}
+research %>%
+    mutate(FormalMeetings = factor(FormalMeetings,
+                                   levels = c("Once a week",
+                                              "Once a fortnight",
+                                              "Once a month",
+                                              "Once every six months",
+                                              "Once a year"))) %>%
+ggplot(aes(x = FormalMeetings, fill = PrimaryGender)) +
+    geom_bar() +
+    facet_wrap(~ PrimaryGender, ncol = 1) +
+    theme(legend.position = "bottom")
+```
+
+Informal meetings
+---------------
+
+```{r informalmeetings}
+research <- research %>%
+    mutate(InformalMeetings = factor(InformalMeetings,
+                                     levels = c("Every day",
+                                                "A few times a week",
+                                                "Once a week",
+                                                "Once a fortnight",
+                                                "Once a month",
+                                                "Once every six months",
+                                                "Once a year",
+                                                "I never see my supervisor(s)")))
+
+ggplot(research, aes(x = InformalMeetings)) +
+    geom_bar()
+```
+
+### By gender
+
+```{r informalmeetings-gender}
+ggplot(research, aes(x = InformalMeetings, fill = Gender)) +
+    geom_bar() +
+    facet_wrap(~ Gender, ncol = 1)
+```
+
+### By primary gender
+
+```{r informalmeetings-primarygender}
+ggplot(research, aes(x = InformalMeetings, fill = PrimaryGender)) +
+    geom_bar() +
+    facet_wrap(~ PrimaryGender, ncol = 1) +
+    theme(legend.position = "bottom")
+```
+
+Qualities
+---------
+
+```{r qualities}
+research %>%
+    select(starts_with("Supervisor_")) %>%
+    gather(key = "Quality", value = "Rating") %>%
+    mutate(Quality = str_remove(Quality, "Supervisor_")) %>%
+    group_by(Quality, Rating) %>%
+    summarise(Count = n()) %>%
+    mutate(Prop = Count / sum(Count)) %>%
+    ggplot(aes(x = Quality, y = Prop, fill = factor(Rating))) +
+    geom_col() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+### By primary gender
+
+```{r qualities-primarugender}
+research %>%
+    select(PrimaryGender, starts_with("Supervisor_")) %>%
+    filter(PrimaryGender %in% c("Male", "Female")) %>%
+    gather(key = "Quality", value = "Rating", -PrimaryGender) %>%
+    mutate(Quality = str_remove(Quality, "Supervisor_")) %>%
+    group_by(PrimaryGender, Quality, Rating) %>%
+    summarise(Count = n()) %>%
+    mutate(Prop = Count / sum(Count)) %>%
+    ggplot(aes(x = Quality, y = Prop, fill = factor(Rating))) +
+    geom_col() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+    facet_wrap(~ PrimaryGender, ncol = 1)
+```
+
+External activities
+-------------------
+
+```{r activities}
+ggplot(research, aes(x = ExternalActivities)) +
+    geom_bar() +
+    coord_flip()
+```
+
+Facilities
+----------
+
+```{r facilities}
+research %>%
+    select(starts_with("Facilities_")) %>%
+    mutate(GroupSize = n()) %>%
+    gather(key = "Type", value = "Has", -GroupSize) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "Facilities_")) %>%
+    group_by(Type, GroupSize) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = Type)) %>%
+    ggplot(aes(x = Type, y = Prop)) +
+    geom_col() +
+    coord_flip()
+```
+
+### By institute
+
+```{r facilities-institute}
+research %>%
+    select(starts_with("Facilities_"), Institute) %>%
+    group_by(Institute) %>%
+    mutate(GroupSize = n()) %>%
+    ungroup() %>%
+    gather(key = "Type", value = "Has", -GroupSize, -Institute) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "Facilities_")) %>%
+    group_by(Type, GroupSize, Institute) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = unique(Type))) %>%
+    ggplot(aes(x = Type, y = Prop, fill = Institute)) +
+    geom_col() +
+    coord_flip() +
+    facet_wrap(~ Institute, ncol = 1)
+```
+
+Financial support
+-----------------
+
+```{r finsupport}
+research %>%
+    select(starts_with("FinancialSupport_")) %>%
+    mutate(GroupSize = n()) %>%
+    gather(key = "Type", value = "Has", -GroupSize) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "FinancialSupport_")) %>%
+    group_by(Type, GroupSize) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = Type)) %>%
+    ggplot(aes(x = Type, y = Prop)) +
+    geom_col() +
+    coord_flip()
+```
+
+### By institute
+
+```{r finsupport-institute}
+research %>%
+    select(starts_with("FinancialSupport_"), Institute) %>%
+    group_by(Institute) %>%
+    mutate(GroupSize = n()) %>%
+    ungroup() %>%
+    gather(key = "Type", value = "Has", -GroupSize, -Institute) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "FinancialSupport_")) %>%
+    group_by(Type, GroupSize, Institute) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = unique(Type))) %>%
+    ggplot(aes(x = Type, y = Prop, fill = Institute)) +
+    geom_col() +
+    coord_flip() +
+    facet_wrap(~ Institute, ncol = 1)
+```
+
+Other support
+-------------
+
+```{r othersupport}
+research %>%
+    select(starts_with("OtherSupport_")) %>%
+    mutate(GroupSize = n()) %>%
+    gather(key = "Type", value = "Has", -GroupSize) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "OtherSupport_")) %>%
+    group_by(Type, GroupSize) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = Type)) %>%
+    ggplot(aes(x = Type, y = Prop)) +
+    geom_col() +
+    coord_flip()
+```
+
+### By institute
+
+```{r othersupport-institute}
+research %>%
+    select(starts_with("OtherSupport_"), Institute) %>%
+    group_by(Institute) %>%
+    mutate(GroupSize = n()) %>%
+    ungroup() %>%
+    gather(key = "Type", value = "Has", -GroupSize, -Institute) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "OtherSupport_")) %>%
+    group_by(Type, GroupSize, Institute) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = unique(Type))) %>%
+    ggplot(aes(x = Type, y = Prop, fill = Institute)) +
+    geom_col() +
+    coord_flip() +
+    facet_wrap(~ Institute, ncol = 1)
+```
+
+### By gender
+
+```{r othersupport-gender}
+research %>%
+    select(starts_with("OtherSupport_"), Gender) %>%
+    group_by(Gender) %>%
+    mutate(GroupSize = n()) %>%
+    ungroup() %>%
+    gather(key = "Type", value = "Has", -GroupSize, -Gender) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "OtherSupport_")) %>%
+    group_by(Type, GroupSize, Gender) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = unique(Type))) %>%
+    ggplot(aes(x = Type, y = Prop, fill = Gender)) +
+    geom_col() +
+    coord_flip() +
+    facet_wrap(~ Gender, ncol = 1)
+```
+
+### By primary gender
+
+```{r othersupport-primarygender}
+research %>%
+    select(starts_with("OtherSupport_"), PrimaryGender) %>%
+    filter(PrimaryGender %in% c("Male", "Female")) %>%
+    group_by(PrimaryGender) %>%
+    mutate(GroupSize = n()) %>%
+    ungroup() %>%
+    gather(key = "Type", value = "Has", -GroupSize, -PrimaryGender) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "OtherSupport_")) %>%
+    group_by(Type, GroupSize, PrimaryGender) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = unique(Type))) %>%
+    ggplot(aes(x = Type, y = Prop, fill = PrimaryGender)) +
+    geom_col() +
+    coord_flip() +
+    facet_wrap(~ PrimaryGender, ncol = 1)
+```
+
+Involvement
+===========
+
+COMBINE
+-------
+
+```{r combine}
+responses %>%
+    select(starts_with("COMBINE_")) %>%
+    mutate(GroupSize = n()) %>%
+    gather(key = "Type", value = "Has", -GroupSize) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "COMBINE_")) %>%
+    group_by(Type, GroupSize) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = Type)) %>%
+    ggplot(aes(x = Type, y = Prop)) +
+    geom_col() +
+    coord_flip()
+```
+
+ABACBS
+------
+
+```{r abacbs}
+responses %>%
+    select(starts_with("ABACBS_")) %>%
+    mutate(GroupSize = n()) %>%
+    gather(key = "Type", value = "Has", -GroupSize) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "ABACBS_")) %>%
+    group_by(Type, GroupSize) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = Type)) %>%
+    ggplot(aes(x = Type, y = Prop)) +
+    geom_col() +
+    coord_flip()
+```
+
+ABACBS Membership
+-----------------
+
+```{r membership}
+responses %>%
+    select(starts_with("Membership_")) %>%
+    mutate(GroupSize = n()) %>%
+    gather(key = "Type", value = "Has", -GroupSize) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "Membership_")) %>%
+    group_by(Type, GroupSize) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = Type)) %>%
+    ggplot(aes(x = Type, y = Prop)) +
+    geom_col() +
+    coord_flip()
+```
+
+### By membership
+
+```{r membership-membership}
+research %>%
+    select(starts_with("Membership_"), ABACBS_Member) %>%
+    group_by(ABACBS_Member) %>%
+    mutate(GroupSize = n()) %>%
+    ungroup() %>%
+    gather(key = "Type", value = "Has", -GroupSize, -ABACBS_Member) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "Membership_")) %>%
+    group_by(Type, GroupSize, ABACBS_Member) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = unique(Type))) %>%
+    ggplot(aes(x = Type, y = Prop, fill = ABACBS_Member)) +
+    geom_col() +
+    coord_flip() +
+    facet_wrap(~ ABACBS_Member, ncol = 1)
+```
+
+### By residency
+
+```{r membership-residency}
+research %>%
+    select(starts_with("Membership_"), Residency) %>%
+    group_by(Residency) %>%
+    mutate(GroupSize = n()) %>%
+    ungroup() %>%
+    gather(key = "Type", value = "Has", -GroupSize, -Residency) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "Membership_")) %>%
+    group_by(Type, GroupSize, Residency) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = unique(Type))) %>%
+    ggplot(aes(x = Type, y = Prop, fill = Residency)) +
+    geom_col() +
+    coord_flip() +
+    facet_wrap(~ Residency, ncol = 1)
+```
+
+### By gender
+
+```{r membership-gender}
+research %>%
+    select(starts_with("Membership_"), Gender) %>%
+    group_by(Gender) %>%
+    mutate(GroupSize = n()) %>%
+    ungroup() %>%
+    gather(key = "Type", value = "Has", -GroupSize, -Gender) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "Membership_")) %>%
+    group_by(Type, GroupSize, Gender) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = unique(Type))) %>%
+    ggplot(aes(x = Type, y = Prop, fill = Gender)) +
+    geom_col() +
+    coord_flip() +
+    facet_wrap(~ Gender, ncol = 1)
+```
+
+COMBINE Events
+--------------
+
+```{r events}
+responses %>%
+    select(starts_with("Events_")) %>%
+    mutate(GroupSize = n()) %>%
+    gather(key = "Type", value = "Has", -GroupSize) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "Events_")) %>%
+    group_by(Type, GroupSize) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = Type)) %>%
+    ggplot(aes(x = Type, y = Prop)) +
+    geom_col() +
+    coord_flip()
+```
+
+### By membership
+
+```{r events-membership}
+research %>%
+    select(starts_with("Events_"), ABACBS_Member) %>%
+    group_by(ABACBS_Member) %>%
+    mutate(GroupSize = n()) %>%
+    ungroup() %>%
+    gather(key = "Type", value = "Has", -GroupSize, -ABACBS_Member) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "Events_")) %>%
+    group_by(Type, GroupSize, ABACBS_Member) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = unique(Type))) %>%
+    ggplot(aes(x = Type, y = Prop, fill = ABACBS_Member)) +
+    geom_col() +
+    coord_flip() +
+    facet_wrap(~ ABACBS_Member, ncol = 1)
+```
+
+### By residency
+
+```{r events-residency}
+research %>%
+    select(starts_with("Events_"), Residency) %>%
+    group_by(Residency) %>%
+    mutate(GroupSize = n()) %>%
+    ungroup() %>%
+    gather(key = "Type", value = "Has", -GroupSize, -Residency) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "Events_")) %>%
+    group_by(Type, GroupSize, Residency) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = unique(Type))) %>%
+    ggplot(aes(x = Type, y = Prop, fill = Residency)) +
+    geom_col() +
+    coord_flip() +
+    facet_wrap(~ Residency, ncol = 1)
+```
+
+### By gender
+
+```{r events-gender}
+research %>%
+    select(starts_with("Events_"), Gender) %>%
+    group_by(Gender) %>%
+    mutate(GroupSize = n()) %>%
+    ungroup() %>%
+    gather(key = "Type", value = "Has", -GroupSize, -Gender) %>%
+    filter(Has == TRUE) %>%
+    mutate(Type = str_remove(Type, "Events_")) %>%
+    group_by(Type, GroupSize, Gender) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupSize) %>%
+    arrange(Prop) %>%
+    mutate(Type = factor(Type, levels = unique(Type))) %>%
+    ggplot(aes(x = Type, y = Prop, fill = Gender)) +
+    geom_col() +
+    coord_flip() +
+    facet_wrap(~ Gender, ncol = 1)
+```
 
 Session info
 ============
