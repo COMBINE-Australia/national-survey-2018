@@ -1032,7 +1032,7 @@ responses <- responses %>%
            SupervisorNumber = `Number of supervisors`,
            PrimaryPercentage = `Primary supervisor percentage`,
            PrimaryGender = `Primary supervisor gender`,
-           SecondayGender = `Secondary supervisor gender`,
+           SecondaryGender = `Secondary supervisor gender`,
            FormalMeetings = `Formal meetings`,
            InformalMeetings = `Informal meetings`,
            Supervisor_Communication = `Supervisor qualities [Communication]`,
