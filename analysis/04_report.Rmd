@@ -805,6 +805,96 @@ plot_grid(p1, p2, nrow = 1)
 What can COMBINE do to help?
 ============================
 
+* Events other
+
+```{r involvement}
+p1 <- responses %>%
+    summarise_category("COMBINE_", has_other = FALSE) %>%
+    ggplot(aes(x = Key, y = Prop)) +
+    geom_col(fill = combine_blue) +
+    scale_x_discrete(labels = c("Newsletter", "Survey", "Social media",
+                                "Seminar", "Symposium", "Workshop")) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    ggtitle("Previous involvement with COMBINE") +
+    theme(axis.title = element_blank())
+
+p2 <- responses %>%
+    summarise_category("ABACBS_", has_other = FALSE) %>%
+    ggplot(aes(x = Key, y = Prop)) +
+    geom_col(fill = combine_blue) +
+    scale_x_discrete(labels = c("Member", "Newsletter", "Social media",
+                                "None", "Conference", "Event")) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    ggtitle("Previous involvement with ABACBS") +
+    theme(axis.title = element_blank())
+
+plot_grid(p1, p2, ncol = 1)
+```
+
+```{r membership}
+p1 <- responses %>%
+    summarise_category_grouped("Membership_", ABACBS_Member,
+                               has_other = FALSE) %>%
+    mutate(ABACBS_Member = if_else(ABACBS_Member, "Member", "Non-member")) %>%
+    ggplot(aes(x = fct_rev(Key), y = Prop)) +
+    geom_col(fill = combine_blue) +
+    scale_x_discrete(labels = c("No benefits\nfor students",
+                                "Say in the direction\nof the society",
+                                "Looks good on a CV",
+                                "Access to\nprizes and awards",
+                                "Access to\ntravel bursaries",
+                                "Member of a\nnational society",
+                                "Conference discounts",
+                                "Event discounts")) +
+    scale_y_continuous(labels = scales::percent_format(), limits = c(0, 0.85)) +
+    coord_flip() +
+    facet_wrap(~ ABACBS_Member, nrow = 1) +
+    ggtitle("Benefits of ABACBS membership") +
+    theme(axis.title = element_blank())
+
+p2 <- responses %>%
+    summarise_category_grouped("Membership_", Residency,
+                               has_other = FALSE) %>%
+    ggplot(aes(x = fct_rev(Key), y = Prop)) +
+    geom_col(fill = combine_blue) +
+    scale_x_discrete(labels = c("No benefits\nfor students",
+                                "Say in the direction\nof the society",
+                                "Looks good on a CV",
+                                "Access to\nprizes and awards",
+                                "Access to\ntravel bursaries",
+                                "Member of a\nnational society",
+                                "Conference discounts",
+                                "Event discounts")) +
+    scale_y_continuous(labels = scales::percent_format(), limits = c(0, 0.85)) +
+    coord_flip() +
+    facet_wrap(~ Residency, nrow = 1) +
+    theme(axis.title = element_blank())
+
+plot_grid(p1, p2, ncol = 1)
+```
+
+```{r combine-events}
+responses %>%
+    summarise_category("Events_", has_other = FALSE) %>%
+    ggplot(aes(x = fct_rev(Key), y = Prop)) +
+    geom_col(fill = combine_blue) +
+    scale_x_discrete(labels = c("Not interested\nin events",
+                                "Laboratory skills\nworkshops",
+                                "One off seminars",
+                                "Local social nights",
+                                "Regular seminars\n(student speakers",
+                                "Regular seminars\n(invited speakers)",
+                                "Professional skills\nworkshops",
+                                "Programming workshops",
+                                "COMBINE Symposium",
+                                "Statistics workshops",
+                                "Bioinformatics\nworkshops")) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    coord_flip() +
+    ggtitle("What possible COMBINE events would you like to attend?") +
+    theme(axis.title = element_blank())
+```
+
 Session info
 ============
 
