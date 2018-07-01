@@ -1,0 +1,823 @@
+---
+title: "COMBINE National Student Survey 2018"
+author: "COMBINE Australia"
+date: '`r Sys.Date()`'
+output:
+  html_document:
+    number_sections: yes
+    theme: yeti
+    toc: yes
+    toc_float: yes
+    df_print: paged
+---
+
+Code version: `r system("git log -1 --format=oneline | cut -d' ' -f1", intern = TRUE)`
+
+```{r knitr, include = FALSE}
+DOCNAME = "report"
+knitr::opts_chunk$set(autodep        = TRUE,
+                      cache          = FALSE,
+                      cache.path     = paste0("cache/", DOCNAME, "/"),
+                      cache.comments = TRUE,
+                      echo           = FALSE,
+                      error          = FALSE,
+                      fig.align      = "center",
+                      fig.path       = paste0("figures/", DOCNAME, "/"),
+                      fig.width      = 10,
+                      fig.height     = 8,
+                      message        = FALSE,
+                      warning        = FALSE)
+```
+
+```{r libaries, cache = FALSE}
+library("here")
+library("tidyverse")
+library("cowplot")
+library("ggbeeswarm")
+```
+
+```{r source, cache = FALSE}
+source(here("R/manipulation.R"))
+```
+
+```{r theme, cache = FALSE}
+combine_blue <- "#4a86e8"
+gender_cols <- c("#4daf4a", "#ff7f00")
+
+theme_set(
+    theme_minimal(base_size = 14) +
+    theme(plot.title = element_text(hjust = 0.5),
+          strip.text = element_text(size = 16, colour = "white"),
+          strip.background = element_rect(fill = combine_blue,
+                                          colour = combine_blue))
+)
+```
+
+Introduction
+============
+
+```{r load}
+col_types <- cols(
+    Timestamp                     = col_datetime(format = ""),
+    Gender                        = col_character(),
+    Age                           = col_integer(),
+    IndigenousStatus              = col_character(),
+    Location                      = col_character(),
+    CourseLevel                   = col_character(),
+    CourseYear                    = col_character(),
+    Residency                     = col_character(),
+    TimeCommitment                = col_character(),
+    Background                    = col_character(),
+    BackgroundGrouped             = col_character(),
+    Competencies_Genetics         = col_integer(),
+    Competencies_Biochemistry     = col_integer(),
+    Competencies_Probability      = col_integer(),
+    Competencies_Testing          = col_integer(),
+    Competencies_LinearAlgebra    = col_integer(),
+    Competencies_Algorithms       = col_integer(),
+    Competencies_Programming      = col_integer(),
+    Competencies_SoftwareDev      = col_integer(),
+    Finances                      = col_character(),
+    Finances_Government           = col_logical(),
+    Finances_University           = col_logical(),
+    Finances_TopUp                = col_logical(),
+    Finances_PartTime             = col_logical(),
+    Finances_FullTime             = col_logical(),
+    Finances_Parental             = col_logical(),
+    Finances_Savings              = col_logical(),
+    Finances_HasOther             = col_logical(),
+    Finances_Other                = col_character(),
+    CourseworkComponent           = col_character(),
+    CourseworkCurrent             = col_character(),
+    Classes                       = col_double(),
+    Classes_Computational         = col_integer(),
+    Classes_Statistical           = col_integer(),
+    Classes_Biological            = col_integer(),
+    CourseworkTime                = col_double(),
+    Assignments                   = col_integer(),
+    Exams                         = col_integer(),
+    Cohort                        = col_character(),
+    Support                       = col_character(),
+    CourseworkDetails             = col_character(),
+    ResearchComponent             = col_character(),
+    ResearchCurrent               = col_character(),
+    ResearchPercentage            = col_integer(),
+    ResearchTime                  = col_integer(),
+    ResearchFocus                 = col_character(),
+    Focus_GenomicVariants         = col_logical(),
+    Focus_GeneExpression          = col_logical(),
+    Focus_Metagenomics            = col_logical(),
+    Focus_Proteomics              = col_logical(),
+    Focus_DataVis                 = col_logical(),
+    Focus_Methods                 = col_logical(),
+    Focus_Cancer                  = col_logical(),
+    Focus_Analysis                = col_logical(),
+    Focus_CellBiology             = col_logical(),
+    Focus_PlantBiology            = col_logical(),
+    Focus_RareDisease             = col_logical(),
+    Focus_Metabolomics            = col_logical(),
+    Focus_MicrobialBiology        = col_logical(),
+    Focus_HumanBiology            = col_logical(),
+    Focus_ModelOrganisims         = col_logical(),
+    Focus_NonModelOrganisims      = col_logical(),
+    Focus_HasOther                = col_logical(),
+    Focus_Other                   = col_character(),
+    Institute                     = col_character(),
+    Computational                 = col_integer(),
+    Technologies                  = col_character(),
+    Technologies_RNASeq           = col_logical(),
+    Technologies_WholeGenome      = col_logical(),
+    Technologies_Exome            = col_logical(),
+    Technologies_ShortRead        = col_logical(),
+    Technologies_LongRead         = col_logical(),
+    Technologies_MassSpec         = col_logical(),
+    Technologies_Array            = col_logical(),
+    Technologies_FlowCytometry    = col_logical(),
+    Technologies_HasOther         = col_logical(),
+    Technologes_Other             = col_character(),
+    ProgrammingLanguages          = col_character(),
+    Programming_R                 = col_logical(),
+    Programming_Python            = col_logical(),
+    Programming_Shell             = col_logical(),
+    Programming_Git               = col_logical(),
+    Programming_Perl              = col_logical(),
+    Programming_CCpp              = col_logical(),
+    Programming_MATLAB            = col_logical(),
+    Programming_HasOther          = col_logical(),
+    Programming_Other             = col_character(),
+    Collaboration                 = col_character(),
+    Collaboration_YourGroup       = col_logical(),
+    Collaboration_OtherGroups     = col_logical(),
+    Collaboration_ExternalGroups  = col_logical(),
+    Collaboration_OtherStudents   = col_logical(),
+    ResearchGroup                 = col_character(),
+    OtherStudents                 = col_character(),
+    ResearchDetails               = col_character(),
+    SupervisorNumber              = col_integer(),
+    PrimaryPercentage             = col_double(),
+    PrimaryGender                 = col_character(),
+    SecondaryGender               = col_character(),
+    FormalMeetings                = col_character(),
+    InformalMeetings              = col_character(),
+    Supervisor_Communication      = col_integer(),
+    Supervisor_Inclusiveness      = col_integer(),
+    Supervisor_Empathy            = col_integer(),
+    Supervisor_SubjectMatter      = col_integer(),
+    Supervisor_Availability       = col_integer(),
+    Supervisor_Project            = col_integer(),
+    ExternalActivities            = col_character(),
+    FacilityAccess                = col_character(),
+    Facilities_Desk               = col_logical(),
+    Facilities_Computer           = col_logical(),
+    Facilities_Server             = col_logical(),
+    Facilities_Lab                = col_logical(),
+    Facilities_MeetingRooms       = col_logical(),
+    Facilities_BreakRooms         = col_logical(),
+    FinancialSupport              = col_character(),
+    FinancialSupport_TravelApp    = col_logical(),
+    FinancialSupport_TravelNoApp  = col_logical(),
+    FinancialSupport_TopUp        = col_logical(),
+    FinancialSupport_HasOther     = col_logical(),
+    FinancialSupport_Other        = col_character(),
+    OtherSupport                  = col_character(),
+    OtherSupport_Group            = col_logical(),
+    OtherSupport_Institute        = col_logical(),
+    OtherSupport_Students         = col_logical(),
+    OtherSupport_People           = col_logical(),
+    OtherSupport_None             = col_logical(),
+    SupervisorDetails             = col_character(),
+    FamiliarityCOMBINE            = col_character(),
+    COMBINE_Survey                = col_logical(),
+    COMBINE_SocialMedia           = col_logical(),
+    COMBINE_Newsletter            = col_logical(),
+    COMBINE_Workshop              = col_logical(),
+    COMBINE_Seminar               = col_logical(),
+    COMBINE_Symposium             = col_logical(),
+    FamiliarityABACBS             = col_character(),
+    ABACBS_Member                 = col_logical(),
+    ABACBS_SocialMedia            = col_logical(),
+    ABACBS_Newsletter             = col_logical(),
+    ABABCS_Conference             = col_logical(),
+    ABACBS_Event                  = col_logical(),
+    ABACBS_None                   = col_logical(),
+    MembershipABACBS              = col_character(),
+    Membership_National           = col_logical(),
+    Membership_EventDiscount      = col_logical(),
+    Membership_ConferenceDiscount = col_logical(),
+    Membership_Travel             = col_logical(),
+    Membership_Prizes             = col_logical(),
+    Membership_CV                 = col_logical(),
+    Membership_Direction          = col_logical(),
+    Membership_NoBenefits         = col_logical(),
+    EventsCOMBINE                 = col_character(),
+    Events_Programming            = col_logical(),
+    Events_Bioinformatics         = col_logical(),
+    Events_Skills                 = col_logical(),
+    Events_Statistics             = col_logical(),
+    Events_Lab                    = col_logical(),
+    Events_OneOff                 = col_logical(),
+    Events_InvitedSeminar         = col_logical(),
+    Events_StudentSeminar         = col_logical(),
+    Events_Social                 = col_logical(),
+    Events_Symposium              = col_logical(),
+    Events_NotInterested          = col_logical(),
+    Events_HasOther               = col_logical(),
+    Events_Other                  = col_character(),
+    WhatCanWeDo                   = col_character()
+)
+
+responses <- read_tsv(here("data/responses_clean.tsv"),
+                      col_types = col_types)
+```
+
+Who completed the survey?
+=========================
+
+* Number of responses
+* Full time/half time
+* Other backgrounds
+* Other finances
+
+```{r demographics}
+p1 <- ggplot(responses, aes(x = Gender, y = ..prop.., group = 1)) + 
+    geom_bar(fill = combine_blue) + 
+    scale_y_continuous(labels = scales::percent_format()) +
+    ggtitle("Gender") +
+    theme(axis.title = element_blank())
+
+p2 <- ggplot(responses, aes(x = Residency, y = ..prop.., group = 1)) + 
+    geom_bar(fill = combine_blue) + 
+    scale_y_continuous(labels = scales::percent_format()) +
+    ggtitle("Residency") +
+    theme(axis.title = element_blank())
+
+p3 <- ggplot(responses, aes(x = Location, y = ..prop.., group = 1)) + 
+    geom_bar(fill = combine_blue) + 
+    scale_y_continuous(labels = scales::percent_format()) +
+    ggtitle("Location") +
+    theme(axis.title = element_blank())
+
+p4 <- responses %>%
+    mutate(CourseLevel = factor(CourseLevel)) %>%
+    mutate(CourseLevel = fct_relabel(CourseLevel,
+                                     ~ str_replace(.x, " ", "\n"))) %>%
+    ggplot(aes(x = CourseLevel, y = ..prop.., group = 1)) + 
+    geom_bar(fill = combine_blue) + 
+    scale_y_continuous(labels = scales::percent_format()) +
+    ggtitle("Course Type") +
+    theme(axis.title = element_blank())
+
+plot_grid(p1, p2, p3, p4, ncol = 2)
+```
+
+```{r background}
+responses %>%
+    select(Gender, BackgroundGrouped) %>%
+    mutate(BackgroundGrouped = factor(BackgroundGrouped)) %>%
+    mutate(BackgroundGrouped = fct_relabel(BackgroundGrouped,
+                                           ~ str_replace(.x, "/", "\n")),
+           BackgroundGrouped = fct_relevel(BackgroundGrouped, "Other",
+                                           after = Inf)) %>%
+    group_by(Gender) %>%
+    mutate(GroupCount = n()) %>%
+    group_by(Gender, BackgroundGrouped, GroupCount) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupCount) %>%
+    ggplot(aes(x = BackgroundGrouped, y = Prop, fill = Gender)) + 
+    geom_col() + 
+    facet_wrap(~ Gender, ncol = 1) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    scale_fill_manual(values = gender_cols) +
+    ggtitle("Background") +
+    theme(axis.title = element_blank(),
+          legend.position = "none")
+```
+
+```{r competencies, fig.height = 12}
+p1 <- responses %>%
+    select(Gender, starts_with("Competencies")) %>%
+    gather(key = "Competency", value = "Rating", -Gender) %>%
+    mutate(Competency = str_remove(Competency, "Competencies_")) %>%
+    group_by(Gender, Competency, Rating) %>%
+    summarise(Count = n()) %>%
+    mutate(Prop = Count / sum(Count)) %>%
+    ggplot(aes(x = Competency, y = Prop, fill = fct_rev(factor(Rating)))) +
+    geom_col() +
+    scale_y_continuous(labels = scales::percent_format()) +
+    scale_fill_brewer(palette = "Blues", name = "Rating", direction = -1) +
+    ggtitle("Competencies") +
+    facet_wrap(~ Gender, ncol = 1) +
+    theme(axis.text.x = element_blank(),
+          axis.title = element_blank(),
+          legend.position = "none")
+
+p2 <- responses %>%
+    select(Residency, starts_with("Competencies")) %>%
+    gather(key = "Competency", value = "Rating", -Residency) %>%
+    mutate(Competency = str_remove(Competency, "Competencies_")) %>%
+    group_by(Residency, Competency, Rating) %>%
+    summarise(Count = n()) %>%
+    mutate(Prop = Count / sum(Count)) %>%
+    ungroup() %>%
+    mutate(Competency = fct_recode(Competency,
+                                   `Linear\nAlgebra` = "LinearAlgebra",
+                                   `Software\nDevelopment` = "SoftwareDev")) %>%
+    ggplot(aes(x = Competency, y = Prop, fill = fct_rev(factor(Rating)))) +
+    geom_col() +
+    scale_y_continuous(labels = scales::percent_format()) +
+    scale_fill_brewer(palette = "Blues", name = "Rating", direction = -1) +
+    guides(fill = guide_legend(nrow = 1)) +
+    facet_wrap(~ Residency, ncol = 1) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          axis.title = element_blank(),
+          legend.position = "bottom")
+
+plot_grid(p1, p2, ncol = 1, rel_heights = c(0.45, 0.55))
+```
+
+```{r finances, fig.width = 8, fig.height = 9}
+p1 <- responses %>%
+    summarise_category("Finances_") %>%
+    mutate(Key = fct_recode(Key,
+                            `Full-time\nwork` = "FullTime",
+                            `Government\nscholarship` = "Government",
+                            Other = "HasOther",
+                            `Parental\nsupport` = "Parental",
+                            `Part-time\nwork` = "PartTime",
+                            `Top up\nscholarship` = "TopUp",
+                            `University\nscholarship` = "University")) %>%
+    ggplot(aes(x = Key, y = Prop, fill = Key)) +
+    geom_col() +
+    scale_y_continuous(labels = scales::percent_format()) +
+    scale_fill_brewer(palette = "Set1") +
+    ggtitle("Financial support") +
+    theme(axis.title = element_blank(),
+          axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          legend.position = "none")
+
+p2 <- responses %>%
+    summarise_category_grouped("Finances_", Gender) %>%
+    ggplot(aes(x = Key, y = Prop, fill = Key)) +
+    geom_col() +
+    scale_y_continuous(labels = scales::percent_format()) +
+    scale_fill_brewer(palette = "Set1") +
+    ggtitle("By gender") +
+    facet_wrap(~ Gender, ncol = 1) +
+    theme(axis.title = element_blank(),
+          axis.text.x = element_blank(),
+          legend.position = "none")
+
+p3 <- responses %>%
+    summarise_category_grouped("Finances_", Residency) %>%
+    ggplot(aes(x = Key, y = Prop, fill = Key)) +
+    geom_col() +
+    scale_y_continuous(labels = scales::percent_format()) +
+    scale_fill_brewer(palette = "Set1") +
+    ggtitle("By residency") +
+    facet_wrap(~ Residency, ncol = 1) +
+    theme(axis.title = element_blank(),
+          axis.text.x = element_blank(),
+          legend.position = "none")
+
+p4 <- responses %>%
+    summarise_category_grouped("Finances_", CourseLevel) %>%
+    filter(CourseLevel %in% c("Masters (Coursework)", "PhD")) %>%
+    ggplot(aes(x = Key, y = Prop, fill = Key)) +
+    geom_col() +
+    scale_y_continuous(labels = scales::percent_format()) +
+    scale_fill_brewer(palette = "Set1") +
+    ggtitle("By course") +
+    facet_wrap(~ CourseLevel, ncol = 1) +
+    theme(axis.title = element_blank(),
+          axis.text.x = element_blank(),
+          legend.position = "none")
+ 
+# l <- {p1 +
+#         guides(fill = guide_legend(nrow = 1)) +
+#         theme(legend.position = "bottom",
+#               legend.title=element_blank())} %>%
+#     get_legend()
+
+plot_grid(p1, p2, p3, p4, ncol = 2, nrow = 2)
+#plot_grid(pp, l, ncol = 1, rel_heights = c(1, 0.1))
+```
+
+What are students studying?
+===========================
+
+```{r coursework}
+coursework <- filter(responses, CourseworkCurrent == "Yes")
+
+coursework %>%
+    select(CourseLevel, Classes, CourseworkTime, Assignments, Exams) %>%
+    gather(key = "Key", value = "Value", -CourseLevel, -Classes) %>%
+    mutate(Classes = factor(Classes)) %>%
+    mutate(Key = factor(Key,
+                        levels = c("CourseworkTime", "Assignments", "Exams"),
+                        labels = c("Class hours", "Assignments", "Exams"))) %>%
+    ggplot(aes(x = Classes, y = Value, colour = CourseLevel)) +
+    geom_beeswarm(size = 5, alpha = 0.8, cex = 3) +
+    scale_colour_brewer(palette = "Set1", name = "Course type") +
+    coord_flip() +
+    facet_wrap(~ Key, nrow = 1, scales = "free_x") +
+    ggtitle("Coursework details") +
+    xlab("Number of classes") +
+    theme(legend.position = "bottom",
+          axis.title.x = element_blank(),
+          panel.border = element_rect(fill = NA, colour = combine_blue))
+```
+
+```{r class-types}
+coursework %>%
+    select(Classes_Computational, Classes_Statistical, Classes_Biological) %>%
+    filter(!is.na(Classes_Computational)) %>%
+    arrange(Classes_Statistical, Classes_Computational, Classes_Biological) %>%
+    mutate(Person = row_number()) %>%
+    gather(key = Type, value = Percent, -Person) %>%
+    mutate(Type = str_remove(Type, "Classes_")) %>%
+    ggplot(aes(x = factor(Person), y = Percent, fill = Type)) +
+    geom_col() +
+    scale_y_continuous(labels = function(x) {paste0(x, "%")}) +
+    scale_fill_brewer(palette = "Set1", name = "Class type") +
+    ggtitle("Types of classes") +
+    xlab("Students") +
+    ylab("Percentage of classes") +
+    theme(legend.position = "bottom",
+          axis.text.x = element_blank())
+```
+
+What are students researching?
+==============================
+
+* Other research
+* Other technologies
+* Other programming
+
+```{r research}
+research <- filter(responses, ResearchCurrent == "Yes")
+```
+
+```{r focus, fig.height = 10}
+p1 <- research %>%
+    summarise_category("Focus_") %>%
+    mutate(Key = fct_recode(Key,
+                            `Data analysis` = "Analysis",
+                            `Methods\ndevelopment` = "Methods",
+                            `Gene expression` = "GeneExpression",
+                            `Data\nvisualisation` = "DataVis",
+                            `Genomic\nvariants` = "GenomicVariants",
+                            `Human biology` = "HumanBiology",
+                            `Microbial biology` = "MicrobialBiology",
+                            `Cell biology` = "CellBiology",
+                            `Model\norganisms` = "ModelOrganisims",
+                            `Plant biology` = "PlantBiology",
+                            `Non-model\norganisms` = "NonModelOrganisims",
+                            `Rare disease` = "RareDisease",
+                            `Other` = "HasOther")) %>%
+    ggplot(aes(x = Key, y = Prop)) +
+    geom_col(fill = combine_blue) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    ggtitle("Student research focuses") +
+    theme(axis.title = element_blank(),
+          axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+
+p2 <- research %>%
+    summarise_category("Technologies_") %>%
+    mutate(Key = fct_recode(Key,
+                            `Short read\nsequencing` = "ShortRead",
+                            `RNA-seq` = "RNASeq",
+                            `Whole genome\nsequencing` = "WholeGenome",
+                            `Mass\nspectrometry` = "MassSpec",
+                            `Long read\nsequencing` = "LongRead",
+                            `Array-based\ntechnologies` = "Array",
+                            `Exome\nsequencing` = "Exome",
+                            `Flow cytometry` = "FlowCytometry",
+                            `Other` = "HasOther")) %>%
+    ggplot(aes(x = Key, y = Prop)) +
+    geom_col(fill = combine_blue) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    ggtitle("Technologies used by students") +
+    theme(axis.title = element_blank(),
+          axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+
+p3 <- research %>%
+    summarise_category("Programming_") %>%
+    mutate(Key = fct_recode(Key,
+                            `C/C++` = "CCpp",
+                            `Other` = "HasOther")) %>%
+    ggplot(aes(x = Key, y = Prop)) +
+    geom_col(fill = combine_blue) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    ggtitle("Programming languages used by students") +
+    theme(axis.title = element_blank(),
+          axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+
+plot_grid(p1, p2, p3, ncol = 1)
+```
+
+```{r institute}
+research %>%
+    select(Residency, Institute) %>%
+    group_by(Residency) %>%
+    mutate(GroupCount = n()) %>%
+    group_by(Residency, Institute, GroupCount) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / GroupCount) %>%
+    ggplot(aes(x = Institute, y = Prop, fill = Residency)) + 
+    geom_col(fill = combine_blue) + 
+    facet_wrap(~ Residency, ncol = 1) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    ggtitle("Where are students based?") +
+    theme(axis.title = element_blank(),
+          legend.position = "none")
+```
+
+```{r computational-time}
+p1 <- ggplot(research, aes(x = Computational)) +
+    geom_density(colour = combine_blue, fill = combine_blue) +
+    scale_x_continuous(labels = function(x) {paste0(x, "%")}) +
+    facet_wrap(~ Gender) +
+    ylab("Density") +
+    ggtitle("Percentage of projects that is computationl") +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_blank())
+
+p2 <- ggplot(research, aes(x = Computational)) +
+    geom_density(colour = combine_blue, fill = combine_blue) +
+    scale_x_continuous(labels = function(x) {paste0(x, "%")}) +
+    facet_wrap(~ Residency) +
+    ylab("Density") +
+    theme(axis.title.x = element_blank())
+
+plot_grid(p1, p2, ncol = 1)
+```
+
+```{r collaboration}
+research %>%
+    summarise_category_grouped("Collaboration_", Gender, has_other = FALSE) %>%
+    mutate(Key = fct_recode(Key,
+                            `People in\nyour group` = "YourGroup",
+                            `Other groups\nat your institute` = "OtherGroups",
+                            `Groups at\nother institutes` = "ExternalGroups",
+                            `Other students` = "OtherStudents")) %>%
+    ggplot(aes(x = Key, y = Prop)) +
+    geom_col(fill = combine_blue) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    facet_wrap(~ Gender) +
+    ggtitle("Who do students collaborate with?") +
+    theme(axis.title = element_blank(),
+          axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+
+Who are their supervisors?
+==========================
+
+```{r supervisor-gender}
+research %>%
+    select(Gender, PrimaryGender, SecondaryGender) %>%
+    rename(Primary = "PrimaryGender", Secondary = "SecondaryGender") %>%
+    group_by(Gender) %>%
+    mutate(TotalCount = n()) %>%
+    group_by(Gender, TotalCount, Primary, Secondary) %>%
+    summarise(Count = n()) %>%
+    ungroup() %>%
+    mutate(Prop = Count / TotalCount) %>%
+    filter(Primary %in% c("Female", "Male"),
+           Secondary %in% c("Female", "Male")) %>%
+    ggplot(aes(x = Gender, y = Prop, fill = Gender)) +
+    geom_col() +
+    scale_y_continuous(labels = scales::percent_format()) +
+    scale_fill_manual(values = gender_cols, name = "Student gender") +
+    facet_grid(Secondary ~ Primary,
+               labeller = partial(label_both, sep = "\n"), margins = TRUE) +
+    ggtitle("Supervisor genders") +
+    theme(axis.title = element_blank(),
+          axis.text.x = element_blank(),
+          legend.position = "bottom")
+```
+
+```{r qualities}
+research %>%
+    select(PrimaryGender, starts_with("Supervisor_")) %>%
+    filter(PrimaryGender %in% c("Male", "Female")) %>%
+    mutate(PrimaryGender = paste(PrimaryGender, "supervisors")) %>%
+    gather(key = "Quality", value = "Rating", -PrimaryGender) %>%
+    mutate(Quality = str_remove(Quality, "Supervisor_")) %>%
+    group_by(PrimaryGender, Quality, Rating) %>%
+    summarise(Count = n()) %>%
+    mutate(Prop = Count / sum(Count)) %>%
+    ggplot(aes(x = Quality, y = Prop, fill = fct_rev(factor(Rating)))) +
+    geom_col() +
+    scale_x_discrete(labels = c("Availability", "Communication", "Empathy",
+                                "Inclusiveness", "Interest in\nproject",
+                                "Subject matter\nexpertise")) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    scale_fill_brewer(palette = "Blues", name = "Rating", direction = -1) +
+    ggtitle("Supervisor qualities") +
+    facet_wrap(~ PrimaryGender, ncol = 1) +
+    theme(axis.title = element_blank(),
+          axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+
+What support do students receive?
+=================================
+
+```{r coursework-support}
+coursework %>%
+    rename(Support_Cohort = Cohort, Support_Uni = Support) %>%
+    mutate(Support_Cohort = if_else(Support_Cohort == "Yes", TRUE, FALSE),
+           Support_Uni = if_else(Support_Uni == "Yes", TRUE, FALSE)) %>%
+    summarise_category_grouped("Support_", Gender, has_other = FALSE) %>%
+    ggplot(aes(x = Key, y = Prop)) +
+    geom_col(fill = combine_blue) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    scale_x_discrete(labels = c("Part of a\nstudent cohort",
+                                "Adequate university\nsupport")) +
+    ggtitle("Support for coursework students") +
+    ylab('Percentage of students who answered "Yes"') +
+    facet_wrap(~ Gender) +
+    theme(axis.title.x = element_blank())
+```
+
+```{r group-support}
+p1 <- ggplot(research, aes(x = ResearchGroup, y = ..prop.., group = 1)) +
+    geom_bar(fill = combine_blue) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    ggtitle("Do students feel part of their research group?") +
+    theme(axis.title = element_blank())
+
+p2 <- ggplot(research, aes(x = OtherStudents, y = ..prop.., group = 1)) +
+    geom_bar(fill = combine_blue) +
+    scale_x_discrete(labels = c("No, I am the only\nstudent in my group",
+                                "Yes, but they don't\ndo computational work",
+                                "Yes, there are other\ncomputational students")) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    ggtitle("Are there other students in your research group?") +
+    theme(axis.title = element_blank())
+
+plot_grid(p1, p2, ncol = 1)
+```
+
+```{r research-support, fig.width = 8, fig.height = 12}
+p1 <- research %>%
+    summarise_category("OtherSupport_", has_other = FALSE) %>%
+    mutate(Key = fct_recode(Key,
+                            `Research group` = "Group",
+                            `Other people` = "People",
+                            `Other students` = "Students")) %>%
+    ggplot(aes(x = Key, y = Prop, fill = Key)) +
+    geom_col() +
+    scale_y_continuous(labels = scales::percent_format()) +
+    scale_fill_brewer(palette = "Set1") +
+    ggtitle("Sources of support") +
+    theme(axis.title = element_blank(),
+          axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          legend.position = "none")
+
+p2 <- research %>%
+    summarise_category_grouped("OtherSupport_", Gender, has_other = FALSE) %>%
+    ggplot(aes(x = Key, y = Prop, fill = Key)) +
+    geom_col() +
+    scale_y_continuous(labels = scales::percent_format()) +
+    scale_fill_brewer(palette = "Set1") +
+    ggtitle("By gender") +
+    facet_wrap(~ Gender, ncol = 1) +
+    theme(axis.title = element_blank(),
+          axis.text.x = element_blank(),
+          legend.position = "none")
+
+p3 <- responses %>%
+    summarise_category_grouped("OtherSupport_", Residency,
+                               has_other = FALSE) %>%
+    ggplot(aes(x = Key, y = Prop, fill = Key)) +
+    geom_col() +
+    scale_y_continuous(labels = scales::percent_format()) +
+    scale_fill_brewer(palette = "Set1") +
+    ggtitle("By residency") +
+    facet_wrap(~ Residency, ncol = 1) +
+    theme(axis.title = element_blank(),
+          axis.text.x = element_blank(),
+          legend.position = "none")
+
+p4 <- responses %>%
+    summarise_category_grouped("OtherSupport_", Institute,
+                               has_other = FALSE) %>%
+    ggplot(aes(x = Key, y = Prop, fill = Key)) +
+    geom_col() +
+    scale_y_continuous(labels = scales::percent_format()) +
+    scale_fill_brewer(palette = "Set1") +
+    ggtitle("By institute") +
+    facet_wrap(~ Institute, ncol = 1) +
+    theme(axis.title = element_blank(),
+          axis.text.x = element_blank(),
+          legend.position = "none")
+
+p5 <- responses %>%
+    summarise_category_grouped("OtherSupport_", PrimaryGender,
+                               has_other = FALSE) %>%
+    filter(PrimaryGender %in% c("Male", "Female")) %>%
+    ggplot(aes(x = Key, y = Prop, fill = Key)) +
+    geom_col() +
+    scale_y_continuous(labels = scales::percent_format()) +
+    scale_fill_brewer(palette = "Set1") +
+    ggtitle("By supervisor gender") +
+    facet_wrap(~ PrimaryGender, ncol = 1) +
+    theme(axis.title = element_blank(),
+          axis.text.x = element_blank(),
+          legend.position = "none")
+
+pp <- plot_grid(p2, p3, p4, p5, ncol = 2, nrow = 2)
+plot_grid(p1, pp, ncol = 1, rel_heights = c(1, 2))
+```
+
+```{r meetings}
+research %>%
+    select(Gender, FormalMeetings, InformalMeetings) %>%
+    gather(key = "Type", value = "Frequency", -Gender) %>%
+    mutate(Type = str_remove(Type, "Meetings")) %>%
+    mutate(Frequency = fct_relevel(Frequency,
+                                   "Every day",
+                                   "A few times a week",
+                                   "Once a week",
+                                   "Once a fortnight",
+                                   "Once a month",
+                                   "Once every six months",
+                                   "Once a year",
+                                   "I never see my supervisor(s)"),
+           Frequency = fct_recode(
+               Frequency,
+               `A few times\na week` = "A few times a week",
+               `Once a\nfortnight` = "Once a fortnight",
+               `Once every\nsix months` = "Once every six months",
+               `I never see my\nsupervisor(s)` =
+                   "I never see my supervisor(s)")) %>%
+    ggplot(aes(x = fct_rev(Frequency), y = ..prop..,
+               fill = Gender, group = Gender)) +
+    geom_bar(position = "dodge") +
+    scale_y_continuous(labels = scales::percent_format()) +
+    scale_fill_manual(values = gender_cols, name = "Student gender") +
+    coord_flip() +
+    facet_wrap(~ Type, nrow = 1) +
+    ggtitle("Frequency of supervisor meetings") +
+    theme(axis.title = element_blank(),
+          legend.position = "bottom")
+```
+
+```{r institute-support}
+p1 <- research %>%
+    summarise_category_grouped("Facilities_", Institute, has_other = FALSE) %>%
+    mutate(Key = fct_recode(Key,
+                            `Meeting rooms` = "MeetingRooms",
+                            `Break rooms` = "BreakRooms",
+                            `Laboratory` = "Lab")) %>%
+    ggplot(aes(x = fct_rev(Key), y = Prop)) +
+    geom_col(fill = combine_blue) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    facet_wrap(~ Institute, ncol = 1) +
+    coord_flip() +
+    ggtitle("Access to facilities") +
+    theme(axis.title = element_blank())
+
+p2 <- research %>%
+    summarise_category_grouped("FinancialSupport_", Institute,
+                               has_other = FALSE) %>%
+    mutate(Key = fct_recode(Key,
+                            `Travel funding\n(with application)` = "TravelApp",
+                            `Top up\nscholarships` = "TopUp",
+                            `Travel funding\n(no application)` = "TravelNoApp",
+                            `Other` = "HasOther")) %>%
+    ggplot(aes(x = fct_rev(Key), y = Prop)) +
+    geom_col(fill = combine_blue) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    facet_wrap(~ Institute, ncol = 1) +
+    coord_flip() +
+    ggtitle("Access to financial support") +
+    theme(axis.title = element_blank())
+
+plot_grid(p1, p2, nrow = 1)
+```
+
+
+What can COMBINE do to help?
+============================
+
+Session info
+============
+
+```{r session-info, cache = FALSE}
+devtools::session_info()
+```
+
+```{r cleanup-docs, cache = FALSE}
+doc.files <- c(list.files(pattern = "pdf"),
+               list.files(pattern = "html"),
+               list.files(pattern = "docx"))
+
+for (file in doc.files) {
+    file.rename(file, file.path("../docs", file))
+}
+```
