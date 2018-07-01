@@ -1073,7 +1073,7 @@ responses <- responses %>%
            ABACBS_Member = `Familiarity with ABACBS [ABACBS student member]`,
            ABACBS_SocialMedia = `Familiarity with ABACBS [Follow ABACBS on social media]`,
            ABACBS_Newsletter = `Familiarity with ABACBS [Subscribe to the ABACBS newsletter]`,
-           ABABCS_Conference = `Familiarity with ABACBS [Attended ABACBS conference]`,
+           ABACBS_Conference = `Familiarity with ABACBS [Attended ABACBS conference]`,
            ABACBS_Event = `Familiarity with ABACBS [Attended another ABACBS event]`,
            ABACBS_None = `Familiarity with ABACBS [I haven't had any involvement with ABACBS]`,
            MembershipABACBS = `ABACBS Membership`,
