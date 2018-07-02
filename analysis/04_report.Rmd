@@ -230,6 +230,27 @@ responses <- read_tsv(here("data/responses_clean.tsv"),
                       col_types = col_types)
 ```
 
+For the first time this year COMBINE ran a national survey of students. The goal 
+of the was were to learn more about the Australian bioinformatics and
+computational biology community, specifically:
+
+- Who is studying bioinformatics and computational biology in Australia
+- Their academic backgrounds and skills
+- The areas of research and technologies they are working with
+- The support they receive from their supervisors, institutes and universities
+- What issues they encounter during their studies
+- What COMBINE can do to support the student community
+
+The survey opened in April and closed in June and we received over 80 responses.
+Thank you to everyone who completed the survey and congratulations to those that
+won a gift voucher in our prize draw.
+
+Here are some of the interesting results from the survey. When interpreting what
+is shown here it is important to remember that this is a fairly small and
+selective sample. As a result the data is more a reflection of the COMBINE
+community than the wider student community, however we still believe this has
+been a useful and informative exercise.
+
 Who completed the survey?
 =========================
 
@@ -237,6 +258,12 @@ Who completed the survey?
 * Full time/half time
 * Other backgrounds
 * Other finances
+
+We initally received over 80 responses to the survey but after removing few that
+were duplicated or incomplete we were left with `r nrow(responses)` responses.
+The majority of there were from full-time PhD students, however there were some
+other course types and a few part-time responses. The sample was also biased
+towards female and domestic students.
 
 ```{r demographics}
 p1 <- ggplot(responses, aes(x = Gender, y = ..prop.., group = 1)) + 
@@ -270,6 +297,19 @@ p4 <- responses %>%
 plot_grid(p1, p2, p3, p4, ncol = 2)
 ```
 
+Perhaps the most obvious and unexpected demographic is in the distribution of
+student locations, particularly the high numbers from Victoria and the low
+numbers from NSW. This is likely to be at least partly a result of COMBINE's
+history as we were based in Melbourne for a long time and have had many
+Victorian members of the executive. We are hoping to address this in the second
+half of the year by running more events in Sydney. If you are based in NSW and
+would like to get involved we would love to hear from you, particularly as the
+COMBINE Symposium will be held in Sydney in 2019.
+
+We also asked students about their academic backgrounds. The majority were
+coming into bioinformatics from biology, but male students were slightly more 
+likely to come from a computer science or software engineering background.
+
 ```{r background}
 responses %>%
     select(Gender, BackgroundGrouped) %>%
@@ -293,6 +333,16 @@ responses %>%
     theme(axis.title = element_blank(),
           legend.position = "none")
 ```
+
+Other backgrounds included pharmacy, biotechnology, psychology and various types
+of engineering. It is unsurprising to see many backgrounds as bioinformatics has
+traditionally drawn from many fields but it will be interesting to see if this
+changes as more computational subjects are included in undergraduate degrees.
+
+Bioinformatics and computational biology can require a diverse skill set
+including aspects of biology, computer science and statistics. We asked students
+to rate how competent they felt at a variety of skills on a scale from 0
+(lowest) to 5 (highest).
 
 ```{r competencies, fig.height = 12}
 p1 <- responses %>%
@@ -335,6 +385,18 @@ p2 <- responses %>%
 
 plot_grid(p1, p2, ncol = 1, rel_heights = c(0.45, 0.55))
 ```
+
+Overall we saw quite a spread of ratings for all skils. Female students were
+more confident in their genetics skills while male students were more
+comfortable with programming and software development. International students 
+rated themselves more highly at many of the technical skills including
+computational algorithms, linear algebra, programming and software development.
+
+Money can be a source of stress for many students and we were interested in
+how bioinformatics students supported themselves. In general scholarships
+(university and government) and part-time work were the biggests sources of
+financial support but unsurprising this chances by factors such as courst type
+or residency.
 
 ```{r finances, fig.width = 8, fig.height = 9}
 p1 <- responses %>%
@@ -402,6 +464,14 @@ p4 <- responses %>%
 plot_grid(p1, p2, p3, p4, ncol = 2, nrow = 2)
 #plot_grid(pp, l, ncol = 1, rel_heights = c(1, 0.1))
 ```
+
+Domestic students are much more likely to be supported by goverment scholarships
+or part-time work while international students typically rely on university
+funding. Masters students rely more on part-time work and parental support but
+worringly half also responded that they supported themselves using their
+savings. We neglected to included government welfare as an option in the survey
+but this was recored in other responses, along with scholarships from other
+funding bodies.
 
 What are students studying?
 ===========================
@@ -619,9 +689,9 @@ research %>%
     ggtitle("Supervisor qualities") +
     facet_wrap(~ PrimaryGender, ncol = 1) +
     theme(axis.title = element_blank(),
-          axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+          axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          legend.position = "bottom")
 ```
-
 
 What support do students receive?
 =================================
