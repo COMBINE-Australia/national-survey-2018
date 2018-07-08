@@ -1010,7 +1010,7 @@ responses <- responses %>%
            Technologies_Array = `Technologies [Array-based technologies (eg. expression microarrays)]`,
            Technologies_FlowCytometry = `Technologies [Flow cyometry]`,
            Technologies_HasOther = `Technologies [IsOther]`,
-           Technologes_Other = `Technologies [Other]`,
+           Technologies_Other = `Technologies [Other]`,
            ProgrammingLanguages = `Programming languages`,
            Programming_R = `Programming languages [R]`,
            Programming_Python = `Programming languages [Python]`,
