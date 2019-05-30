@@ -245,22 +245,21 @@ The survey opened in April and closed in June and we received over 80 responses.
 Thank you to everyone who completed the survey and congratulations to those that
 won a gift voucher in our prize draw.
 
-Here are some of the interesting results from the survey. When interpreting what
-is shown here it is important to remember that this is a fairly small and
-selective sample. As a result the data is more a reflection of the COMBINE
-community than the wider student community, however, we still believe this has
-been a useful and informative exercise. We also believe that this is a valuable
-opportunity to see what other student's experiences are like and contrast them
-with their own.
+Included here are some of the interesting results from the survey. When
+interpreting what is shown here it is important to remember that this is a
+fairly small and selective sample. As a result the data is more a reflection of 
+the COMBINE community than the wider student community, however, we still
+believe this has been a useful and informative exercise. We also believe that
+this is a valuable opportunity for students to see what others' experiences are 
+like and contrast them with their own.
 
 Who completed the survey?
 =========================
 
-We initially received over 80 responses to the survey but after removing few
-that were duplicated or incomplete we were left with `r nrow(responses)`
-responses. The majority of there were from full-time PhD students, however there
-were some other course types and a few part-time responses. The sample was also 
-biased towards female and domestic students.
+We received `r nrow(responses)` responses to the survey, after removing a couple 
+that were duplicated or incomplete. The majority of these were from full-time
+PhD students, however there were some other course types and a few part-time 
+responses. The sample was also biased towards female and domestic students.
 
 ```{r demographics}
 p1 <- ggplot(responses, aes(x = Gender, y = ..prop.., group = 1)) + 
@@ -304,7 +303,7 @@ would like to get involved we would love to hear from you, particularly as the
 COMBINE Symposium will be held in Sydney in 2019.
 
 We also asked students about their academic backgrounds. The majority were
-coming into bioinformatics from biology, but male students were slightly more 
+coming into bioinformatics from biology, but male students were more 
 likely to come from a computer science or software engineering background.
 
 ```{r background}
@@ -322,18 +321,17 @@ responses %>%
     ungroup() %>%
     mutate(Prop = Count / GroupCount) %>%
     ggplot(aes(x = BackgroundGrouped, y = Prop, fill = Gender)) + 
-    geom_col() + 
-    facet_wrap(~ Gender, ncol = 1) +
+    geom_col(position = "dodge") + 
+    #facet_wrap(~ Gender, ncol = 1) +
     scale_y_continuous(labels = scales::percent_format()) +
     scale_fill_manual(values = gender_cols) +
     ggtitle("Background") +
-    theme(axis.title = element_blank(),
-          legend.position = "none")
+    theme(axis.title = element_blank())
 ```
 
 Other backgrounds included pharmacy, biotechnology, psychology and various types
 of engineering. It is unsurprising to see many backgrounds as bioinformatics has
-traditionally drawn from many fields but it will be interesting to see if this
+traditionally drawn from many fields, but it will be interesting to see if this
 changes as more computational subjects are included in undergraduate degrees.
 
 Bioinformatics and computational biology can require a diverse skill set
@@ -353,7 +351,7 @@ p1 <- responses %>%
     geom_col() +
     scale_y_continuous(labels = scales::percent_format()) +
     scale_fill_brewer(palette = "Blues", name = "Rating", direction = -1) +
-    ggtitle("Competencies") +
+    ggtitle("Competencies by gender") +
     facet_wrap(~ Gender, ncol = 1) +
     theme(axis.text.x = element_blank(),
           axis.title = element_blank(),
@@ -375,6 +373,7 @@ p2 <- responses %>%
     scale_y_continuous(labels = scales::percent_format()) +
     scale_fill_brewer(palette = "Blues", name = "Rating", direction = -1) +
     guides(fill = guide_legend(nrow = 1)) +
+    ggtitle("Competencies by residency") +
     facet_wrap(~ Residency, ncol = 1) +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
           axis.title = element_blank(),
@@ -383,7 +382,7 @@ p2 <- responses %>%
 plot_grid(p1, p2, ncol = 1, rel_heights = c(0.45, 0.55))
 ```
 
-Overall we saw quite a spread of ratings for all skils. Female students were
+Overall we saw quite a spread of ratings for all skills. Female students were
 more confident in their genetics skills while male students were more
 comfortable with programming and software development. International students 
 rated themselves more highly at many of the technical skills including
@@ -392,8 +391,8 @@ computational algorithms, linear algebra, programming and software development.
 Money can be a source of stress for many students and we were interested in
 how bioinformatics students supported themselves. In general scholarships
 (university and government) and part-time work were the biggest sources of
-financial support but unsurprising this chances by factors such as course type
-or residency.
+financial support, but unsurprisingly this is different when factors such as
+course type or residency are considered.
 
 ```{r finances, fig.width = 8, fig.height = 9}
 p1 <- responses %>%
@@ -404,7 +403,7 @@ p1 <- responses %>%
                             Other = "HasOther",
                             `Parental\nsupport` = "Parental",
                             `Part-time\nwork` = "PartTime",
-                            `Top up\nscholarship` = "TopUp",
+                            `Top-up\nscholarship` = "TopUp",
                             `University\nscholarship` = "University")) %>%
     ggplot(aes(x = Key, y = Prop, fill = Key)) +
     geom_col() +
@@ -457,7 +456,7 @@ plot_grid(p1, p2, p3, p4, ncol = 2, nrow = 2)
 
 Domestic students are much more likely to be supported by government
 scholarships or part-time work while international students typically rely on 
-university funding. Masters students rely more on part-time work and parental 
+university funding. Master's students rely more on part-time work and parental 
 support, but worryingly half also responded that they supported themselves using 
 their savings. We neglected to included government welfare as an option in the 
 survey but this was recorded in other responses, along with scholarships from
@@ -468,8 +467,8 @@ What are students studying?
 
 Of the `r nrow(responses)` responses,
 `r sum(responses$CourseworkCurrent == "Yes")` were currently completing
-coursework classes. The majority of these were Master by coursework students by
-they covered all levels from Bachelor to PhD.
+coursework classes. The majority of these were Master by coursework students
+but they covered all levels from Bachelor to PhD.
 
 ```{r coursework}
 coursework <- filter(responses, CourseworkCurrent == "Yes")
@@ -493,13 +492,17 @@ coursework %>%
           panel.border = element_rect(fill = NA, colour = combine_blue))
 ```
 
-Coursework students are enrolled in one to four classes this semester with
-between one and 30 hours of classes a week. There is considerable variation in
-how classes are assessed with students having up to 16 assignments in a semester
-and up to six exams. 
+Coursework students were enrolled in one to four classes in the first semester
+of 2018 with between one and 30 hours of classes a week. There was considerable 
+variation in how classes were assessed with students having up to 16 assignments 
+in a semester and up to six exams. 
 
-Students are completing a range of different kinds of classes, including
-biological, computational and statistical classes. 
+
+We asked students what percentage of their current classes contained biological,
+statistical or computational content. One class may fit into two categories,
+for example a statistics subject might teach statistical theory but also how
+to implement it computationally, meaning that the total could come to more than
+100 percent.
 
 ```{r class-types}
 coursework %>%
@@ -520,16 +523,17 @@ coursework %>%
           axis.text.x = element_blank())
 ```
 
-These are fairly evenly spread, although there are less interdisciplinary than
-we expected. This may represent a truth about the fragmented nature of
-universities or it could be related to how these questions were worded.
+We found that classes are fairly evenly spread through the three disciplines, 
+although there are less interdisciplinary subjects than we expected. This may 
+represent a truth about the fragmented nature of universities or it could be 
+related to how these questions were worded.
 
 Detailed comments provided by students give more insight into the coursework
 experience, particularly some of the negative aspects. One student commented
-that their Master's course has "No support. No prerequisites." and was "Badly
-designed" while others focused on assessment "Too many assignments. Interrupts
+that their Master's course has "No support. No prerequisites" and was "Badly
+designed", while others focused on assessment: "Too many assignments. Interrupts
 meaningful learning". Other students felt they were not being adequately
-prepared for the field "...the coursework is geared towards experimental
+prepared for the field: "... the coursework is geared towards experimental
 projects with no bioinformatics or statistics unfortunately". One detailed
 response touches on many of the difficulties for coursework students, 
 particularly those from biology backgrounds:
@@ -543,9 +547,9 @@ particularly those from biology backgrounds:
 > necessary to enter a PhD program with a scholarship, it feels like being set
 > up to fail."
 
-This comments raise some considerable concerns and suggest that universities
+This comment raises some considerable concerns and suggests that universities
 continue to grapple with preparing students for modern, data-focused biology.
-We expect that universities will continue to develop and improve 
+We expect that universities will continue to develop and improve  
 interdisciplinary courses and integrate more statistical and computational
 skills into undergraduate biology courses, hopefully leading to less of these
 experiences in the future. 
@@ -561,11 +565,11 @@ The majority of responses were from students who are currently completing a
 research project (`r sum(responses$ResearchCurrent == "Yes")` of
 `r nrow(responses)`). These projects cover a range of research focuses. As we
 would expect of bioinformatics students the majority are involved in data
-analysis with methods development and data visualisation also common. Of the
+analysis, with methods development and data visualisation also common. Of the
 research topics, gene expression and genomic variants were most common but there
 was quite a range of other focuses in student research.
 
-Short read sequencing technologies including RNA-seq and whole genome
+Short-read sequencing technologies including RNA-seq and whole genome
 sequencing were the most common sources of data. Other technologies not given
 as options include ChIP-seq and ATAC-seq.
 
@@ -596,7 +600,7 @@ p1 <- research %>%
 p2 <- research %>%
     summarise_category("Technologies_") %>%
     mutate(Key = fct_recode(Key,
-                            `Short read\nsequencing` = "ShortRead",
+                            `Short-read\nsequencing` = "ShortRead",
                             `RNA-seq` = "RNASeq",
                             `Whole genome\nsequencing` = "WholeGenome",
                             `Mass\nspectrometry` = "MassSpec",
@@ -629,7 +633,7 @@ plot_grid(p1, p2, p3, ncol = 1)
 
 A core set of four programming languages were used by students in their
 research (R, Shell, Python and Git), with 80 percent of students using R. Other
-tools are used by some students by these are clearly the current dominant
+tools are used by some students but these four are clearly the current dominant
 programming tools.
 
 While many students use the same sets of computational tools there is 
@@ -656,9 +660,9 @@ p2 <- ggplot(research, aes(x = Computational)) +
 plot_grid(p1, p2, ncol = 1)
 ```
 
-Male students are international students were more likely to have purely
+Male students and international students were more likely to have purely
 computational projects while female and domestic students showed a greater
-spread. This may be related to students academic background with female and 
+spread. This may be related to students' academic background with female and 
 domestic students more likely to have a biology background and the related lab 
 skills.
 
@@ -756,10 +760,10 @@ exception of subject matter expertise. It is important to note that these
 ratings are subjective and may reflect the biases of students. Overall these
 ratings are high, suggesting that most supervisors are generally doing a good 
 job. However some students had issues, particularly with supervisors without
-computational backgrounds, for example, one student mentioned there supervisor
+computational backgrounds. For example, one student mentioned their supervisor
 had a "...lack of expertise in the field combined with lack of collaboration
 with other groups/researchers, and even not allowing me to consult other experts
-in the field...", and another "Supervisor has no computational background so 
+in the field ...", and another "Supervisor has no computational background so 
 getting guidance on this area is challenging".
 
 Other students had mixed experiences with their supervisors, highlighting why it
@@ -822,11 +826,11 @@ plot_grid(p1, p2, ncol = 1)
 
 Most research students felt like they were part of their research groups, 
 one student commenting "I have a fantastic relationship with my supervisor and 
-fellow lab-members. I couldn't be happier with my research environment."
+fellow lab-members. I couldn't be happier with my research environment".
 However, for the minority of students that felt differently, this seemed to be
 related to the cohesiveness of their groups with students explaining that their 
-research group was "...not tight or supportive enough. Everyone working 
-independently with basically no interaction..." and  "It's very exclusive, and 
+research group was "... not tight or supportive enough. Everyone working 
+independently with basically no interaction ..." and  "It's very exclusive, and 
 there is close to zero research interaction in the group (everyone works 
 individually)". These feeling could also be related to the 15 percent of
 students that are alone in their research groups. 
@@ -957,13 +961,13 @@ research %>%
 Most male students had formal meetings once a fortnight and informal
 interactions a few times a week. Female students were more variable, meeting
 both more and less frequently. Meeting frequency may depend on workload and
-preference as this comment notes, "If I have a lot of trouble and questions I 
+preference as this comment notes: "If I have a lot of trouble and questions I 
 might see them everyday but then there are periods where I maybe see them once a 
-month. I really like the freedom of that."
+month. I really like the freedom of that".
 
 Access to appropriate facilities is also vital for students to successfully
-complete a research. We are pleased to see that the majority of students are
-provided with desks and computers as well as access to servers or
+complete a research project. We are pleased to see that the majority of students 
+are provided with desks and computers as well as access to servers or
 high-performance computing that can be essential for many bioinformatics
 projects.
 
@@ -987,7 +991,7 @@ p2 <- research %>%
                                has_other = FALSE) %>%
     mutate(Key = fct_recode(Key,
                             `Travel funding\n(with application)` = "TravelApp",
-                            `Top up\nscholarships` = "TopUp",
+                            `Top-up\nscholarships` = "TopUp",
                             `Travel funding\n(no application)` = "TravelNoApp",
                             `Other` = "HasOther")) %>%
     ggplot(aes(x = fct_rev(Key), y = Prop)) +
@@ -1002,10 +1006,10 @@ plot_grid(p1, p2, nrow = 1)
 ```
 
 Funding to attend conferences can also be important, particularly for PhD
-students hoping to continue in academia and thereoforeneeding opportunities to 
+students hoping to continue in academia and thereofore needing opportunities to 
 present their work and meet people in the field. Most students had access to
-travel grants with an application through their institute or university but
-those based at research institutes had greater access to top up scholarships.
+travel grants with an application through their institute or university, but
+those based at research institutes had greater access to top-up scholarships.
 
 What can COMBINE do to help?
 ============================
@@ -1088,20 +1092,20 @@ plot_grid(p1, p2, ncol = 1)
 ```
 
 Discounts for events and conferences received the most positive responses as
-demonstrated by these comments, "I think the most important thing is decrease
-the registration fee of conferences" and "...provide more funding support to 
+demonstrated by these comments: "I think the most important thing is decrease
+the registration fee of conferences" and "... provide more funding support to 
 attend symposium". Access to prizes, awards and travel bursaries was
 perceived to be more beneficial by non-members than members. International
 students were generally less positive about membership benefits, with the
 exception of it looking good on a CV.
 
-When asked what future COMBINE events students would like to see workshops
+When asked what future COMBINE events students would like to see, workshops
 were the most popular option, along with the COMBINE Symposium. The general 
 programming and introductory bioinformatics workshops we have run in the past 
-have been successful but clearly, there is demand for more as evidenced by this 
-comment, "I would love to see more beginner workshops, as I really benefitted 
-from a workshop ran by COMBINE when I first started sequence analysis." 
-Statistical workshop are not something we have done in the past but are
+have been successful, but clearly there is demand for more as evidenced by this 
+comment: "I would love to see more beginner workshops, as I really benefitted 
+from a workshop ran by COMBINE when I first started sequence analysis". 
+Statistical workshops are not something we have done in the past but are
 something to consider if we can find a format and content that works.
 
 ```{r combine-events}
@@ -1113,7 +1117,7 @@ responses %>%
                                 "Laboratory skills\nworkshops",
                                 "One off seminars",
                                 "Local social nights",
-                                "Regular seminars\n(student speakers",
+                                "Regular seminars\n(student speakers)",
                                 "Regular seminars\n(invited speakers)",
                                 "Professional skills\nworkshops",
                                 "Programming workshops",
@@ -1131,21 +1135,21 @@ events that COMBINE runs but these were of interest for less than 35 percent of
 students that completed the survey. We believe these events are important for
 building a student community but there is more we can do to make them more
 attractive for more people. For example, one comment suggested that COMBINE
-should "...hold monthly bioinformatics meet up in each city and the program 
+should "... hold monthly bioinformatics meet up in each city and the program 
 includes allocating desks/tags/etc for different topics (eg. DNA seq, RNA seq, 
 etc.) for asking questions, networking, etc.".
 
 Other suggestions included mentoring programs, advocacy for student talks and
 travel funding and a PhD award (stay tuned!). One comment asked us to provide 
-"...a framework where students can connect with others for help and support with 
-aspects of their project, e.g. questions on programming (language specific
+"... a framework where students can connect with others for help and support
+with aspects of their project, e.g. questions on programming (language specific
 groups), troubleshooting advice, beta testers, etc.". Earlier this year we
-opened up our Slack for any students to join and we hope it can become exactly
-that kind of platform, as well as giving students more opportunity to get
-involved with COMBINE.
+opened up our Slack workspace for any students to join and we hope it can become 
+exactly that kind of platform, as well as giving students more opportunity to
+get involved with COMBINE.
 
 On a final note, we really appreciated receiving comments like this, which we
-think embodies exactly what COMBINE is trying to achieve.
+think embodies exactly what COMBINE is trying to achieve:
 
 > "COMBINE is the greatest. I value the student-driven focus and identity of
 > COMBINE, as well as its role as an ABACBS sub-committee which enables cohesion 
