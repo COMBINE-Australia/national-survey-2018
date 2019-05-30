@@ -46,7 +46,6 @@ responses, splitting them up in different ways etc. This will help us decide
 what to include in the final report.
 
 ```{r load}
-
 col_types <- cols(
     Timestamp                     = col_datetime(format = ""),
     Gender                        = col_character(),

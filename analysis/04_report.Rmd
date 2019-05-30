@@ -451,15 +451,8 @@ p4 <- responses %>%
     theme(axis.title = element_blank(),
           axis.text.x = element_blank(),
           legend.position = "none")
- 
-# l <- {p1 +
-#         guides(fill = guide_legend(nrow = 1)) +
-#         theme(legend.position = "bottom",
-#               legend.title=element_blank())} %>%
-#     get_legend()
 
 plot_grid(p1, p2, p3, p4, ncol = 2, nrow = 2)
-#plot_grid(pp, l, ncol = 1, rel_heights = c(1, 0.1))
 ```
 
 Domestic students are much more likely to be supported by government
@@ -638,24 +631,6 @@ A core set of four programming languages were used by students in their
 research (R, Shell, Python and Git), with 80 percent of students using R. Other
 tools are used by some students by these are clearly the current dominant
 programming tools.
-
-```{r institute, eval = FALSE}
-research %>%
-    select(Residency, Institute) %>%
-    group_by(Residency) %>%
-    mutate(GroupCount = n()) %>%
-    group_by(Residency, Institute, GroupCount) %>%
-    summarise(Count = n()) %>%
-    ungroup() %>%
-    mutate(Prop = Count / GroupCount) %>%
-    ggplot(aes(x = Institute, y = Prop, fill = Residency)) + 
-    geom_col(fill = combine_blue) + 
-    facet_wrap(~ Residency, ncol = 1) +
-    scale_y_continuous(labels = scales::percent_format()) +
-    ggtitle("Where are students based?") +
-    theme(axis.title = element_blank(),
-          legend.position = "none")
-```
 
 While many students use the same sets of computational tools there is 
 considerable variation in the percentage of their projects that are 
